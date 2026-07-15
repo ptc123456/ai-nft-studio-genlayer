@@ -1,21 +1,16 @@
-# Task List — AI NFT Studio Release Candidate
+# Task List — GenLayer Studionet Migration
 
 ## 1. Completed Tasks
-- `[x]` Naming is exactly `class Contract(gl.Contract)` with alias `_Contract = Contract`.
-- `[x]` Strict `ensure_address` normalization checking rules.
-- `[x]` Non-deterministic error handling reverting on-chain transactions.
-- `[x]` Deleted `contracts/test_linter_find.py` and configured `pytest.ini`.
-- `[x]` Suppressed pytest config warnings with `gltest.config.yaml`.
-- `[x]` Vite app.js separate clients (`readClient` and `writeClient`) and status checking rules.
-- `[x]` Deletion of `frontend/abis.js` and `frontend/.vercel` directories.
-- `[x]` Create complete root README.md with GenLayer curation design and architectural flow details.
-- `[x]` Add direct tests `test_low_alignment_returns_revise_without_mint` and `test_unsafe_artwork_returns_rejected_without_mint` to `tests/direct/test_registry.py`.
-- `[x]` Refactor `walkthrough.md` to remove any references to HTTP head.
-- `[x]` Minor hygiene edits (frontend/.gitignore format, remove `.badge-mock` CSS selector).
+- `[x]` Migrate frontend client config in `app.js` to Studionet.
+- `[x]` Update HTML layouts `index.html` and `app.html` to reference Studionet.
+- `[x]` Configure `.env` and `.env.example` with the real deployed contract address.
+- `[x]` Update specifications and guidelines: `SPEC.md` and `ANTIGRAVITY_PROMPT.md`.
+- `[x]` Update documentation: `README.md` and `walkthrough.md`.
+- `[x]` Perform linter, pytest, Vite build, and legacy reference verification checks.
 - `[x]` Update `task.md` to completed.
 
 ## 2. Pending Tasks
-- None. All tasks for the release candidate correction round are fully met.
+- None.
 
 ## 3. Blockers
 - None.
@@ -36,10 +31,15 @@
 2. **Pytest Run**:
    ```bash
    $env:PYTHONIOENCODING="utf-8"
-   .venv\Scripts\python.exe -m pytest -v
+   .venv\Scripts\python.exe -m pytest -q
    ```
 
 3. **Frontend Build**:
    ```bash
    npm run build
+   ```
+
+4. **Legacy Network Reference Scan**:
+   ```bash
+   Run a repository scan over frontend, contracts, tests, package.json, .env.example, README.md, SPEC.md, ANTIGRAVITY_PROMPT.md, walkthrough.md, task.md, and gltest.config.yaml to confirm no deprecated network configuration remains.
    ```

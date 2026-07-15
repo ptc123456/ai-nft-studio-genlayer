@@ -16,10 +16,10 @@ const ExecutionResult = {
 };
 
 // Configuration
-const bradburyChainId = '0x107d'; // Chain ID 4221 in hex
+const studioChainId = '0xf22f'; // Chain ID 61999 in hex
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '';
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL || 'https://github.com/ptc123456/ai-nft-studio-genlayer';
-const EXPLORER_URL = 'https://explorer-bradbury.genlayer.com/';
+const EXPLORER_URL = 'https://explorer-studio.genlayer.com/';
 
 // Clients and State
 let readClient = null;
@@ -30,7 +30,7 @@ let userAddress = null;
 window.addEventListener('DOMContentLoaded', async () => {
   // Setup read client immediately
   readClient = createClient({
-    chain: chains.testnetBradbury
+    chain: chains.studionet
   });
 
   initUI();
@@ -52,7 +52,7 @@ function injectLinks() {
     if (a.href && a.href.includes('github.com')) {
       a.href = GITHUB_URL;
     }
-    if (a.href && (a.href.includes('explorer.genlayer.com') || a.href.includes('explorer-bradbury'))) {
+    if (a.href && (a.href.includes('explorer.genlayer.com') || a.href.includes('explorer-studio'))) {
       a.href = EXPLORER_URL;
     }
   });
@@ -152,12 +152,12 @@ async function connectWallet() {
     if (accounts.length > 0) {
       // Check network chain
       const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (currentChainId !== bradburyChainId) {
-        showToast('Switching to GenLayer Bradbury network...', 'info');
+      if (currentChainId !== studioChainId) {
+        showToast('Switching to GenLayer Studionet network...', 'info');
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: bradburyChainId }],
+            params: [{ chainId: studioChainId }],
           });
         } catch (switchError) {
           if (switchError.code === 4902) {
@@ -165,23 +165,23 @@ async function connectWallet() {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
-                  chainId: bradburyChainId,
-                  chainName: 'GenLayer Bradbury Testnet',
-                  rpcUrls: ['https://rpc-bradbury.genlayer.com'],
+                  chainId: studioChainId,
+                  chainName: 'GenLayer Studionet',
+                  rpcUrls: ['https://studio.genlayer.com/api'],
                   nativeCurrency: {
                     name: 'GEN',
                     symbol: 'GEN',
                     decimals: 18
                   },
-                  blockExplorerUrls: ['https://explorer-bradbury.genlayer.com/']
+                  blockExplorerUrls: ['https://explorer-studio.genlayer.com/']
                 }]
               });
             } catch (addError) {
-              showToast('Failed to add Bradbury network to wallet.', 'error');
+              showToast('Failed to add Studionet network to wallet.', 'error');
               return;
             }
           } else {
-            showToast('Please switch your wallet to Bradbury network.', 'error');
+            showToast('Please switch your wallet to Studionet network.', 'error');
             return;
           }
         }
@@ -201,7 +201,7 @@ async function setupConnectedWallet(address) {
   
   // Create write client using active provider and account address
   writeClient = createClient({
-    chain: chains.testnetBradbury,
+    chain: chains.studionet,
     provider: window.ethereum,
     account: userAddress
   });

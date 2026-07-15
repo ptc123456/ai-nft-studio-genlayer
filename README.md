@@ -130,27 +130,25 @@ networks:
     url: "http://localhost:4000/api"
   studionet:
     url: "https://studio.genlayer.com/api"
-  testnet_bradbury:
-    url: "https://rpc-bradbury.genlayer.com"
 ```
 
 ---
 
-## 7. GenLayer Bradbury Testnet
+## 7. GenLayer Studionet Network
 
-- **RPC URL**: `https://rpc-bradbury.genlayer.com`
-- **Chain ID**: `4221` (Hex: `0x107d`)
+- **RPC URL**: `https://studio.genlayer.com/api`
+- **Chain ID**: `61999` (Hex: `0xf22f`)
 - **Native Currency**: `GEN`
-- **Block Explorer**: [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com/)
+- **Block Explorer**: [explorer-studio.genlayer.com](https://explorer-studio.genlayer.com/)
 
 ---
 
-## 8. Deployment Steps
+## 8. Deployment and Configuration
 
 ### GenLayer Studio Deployment
 1. Open [GenLayer Studio](https://studio.genlayer.com/).
 2. Load the project workspace folder.
-3. Select `testnet_bradbury` or `studionet` in the top network bar.
+3. Select `studionet` in the top network bar.
 4. Deploy the [contracts/registry.py](contracts/registry.py) contract.
 5. Copy the deployed contract address.
 
@@ -160,13 +158,12 @@ networks:
 ### Frontend Environment Variables
 Configure the `.env` file in the project root:
 ```env
-# Populate with the deployed address from GenLayer Studio
-VITE_CONTRACT_ADDRESS=
+# Deployed contract address on GenLayer Studionet
+VITE_CONTRACT_ADDRESS=0x2676763dBD21891C5D4945d0e20D2108802C0997
 
-# Overrides default github link
+# Target Project Repository GitHub URL
 VITE_GITHUB_URL=https://github.com/ptc123456/ai-nft-studio-genlayer
 ```
-*Note: Keep `VITE_CONTRACT_ADDRESS` empty until you complete a live deployment.*
 
 ### Vercel Deployment
 To host the frontend on Vercel:
@@ -190,5 +187,8 @@ The frontend client in `app.js` is split into:
 ---
 
 ## 10. Release Status
-- **Contract Address Deployed**: None (Leave empty for configuration).
-- **Live URL**: None (Local development mode).
+
+- **Network**: GenLayer Studionet
+- **Deployed Contract Address**: `0x2676763dBD21891C5D4945d0e20D2108802C0997`
+- **Deployment Transaction Hash**: `0x112db6b1595f3f876388f733b2273070a09e32738824205bc6a4c3d108f9e4e3`
+- **Active Explorer**: [explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997](https://explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997)

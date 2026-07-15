@@ -1,12 +1,12 @@
 # Walkthrough — AI NFT Studio GenLayer Port
 
-This document details the user flow, smart contract curation mechanics, frontend implementation structure, transaction lifecycles, and verification evidence for the GenLayer Bradbury Testnet port.
+This document details the user flow, smart contract curation mechanics, frontend implementation structure, transaction lifecycles, and verification evidence for the GenLayer Studionet port.
 
 ## 1. User Flow
 
 1. **Wallet Connection**:
    - The user opens the dApp. If their wallet is not connected, they are prompted to connect.
-   - The application checks the network and switches/adds the **GenLayer Bradbury Testnet** (Chain ID: `4221` / `0x107d`).
+   - The application checks the network and switches/adds the **GenLayer Studionet** (Chain ID: `61999` / `0xf22f`).
    - The user's wallet address and native `GEN` token balance are displayed on the header.
 
 2. **Curation Submission**:
@@ -76,7 +76,7 @@ graph TD
 ## 3. Frontend Flow
 
 The frontend logic is located at [frontend/app.js](frontend/app.js) and split into:
-- **`readClient`**: Configured solely with the `testnetBradbury` chain settings. Used for querying balances, fetching total mints, loading gallery items, and reading review metadata without requiring wallet signing permissions.
+- **`readClient`**: Configured solely with the `studionet` chain settings. Used for querying balances, fetching total mints, loading gallery items, and reading review metadata without requiring wallet signing permissions.
 - **`writeClient`**: Instantiated with the browser extension wallet provider `window.ethereum` and user account address. Used to sign and send `curate_and_mint` and `transfer_artwork` transactions.
 - **Dynamic Override Injector**: Scans and overwrites all static anchor links on startup to match environment variables (`VITE_GITHUB_URL` and `VITE_CONTRACT_ADDRESS`) and normalized explorer links.
 
@@ -104,7 +104,12 @@ The frontend logic is located at [frontend/app.js](frontend/app.js) and split in
 
 ## 5. QA Evidence
 
-### 1. GenVM Linter Check
+### 1. Active Deployment Status
+- **Deployed Contract Address**: `0x2676763dBD21891C5D4945d0e20D2108802C0997`
+- **Deployment Transaction**: `0x112db6b1595f3f876388f733b2273070a09e32738824205bc6a4c3d108f9e4e3`
+- **Explorer URL**: [explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997](https://explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997)
+
+### 2. GenVM Linter Check
 ```
 ✓ Lint passed (3 checks)
 ✓ Validation passed
@@ -112,10 +117,10 @@ The frontend logic is located at [frontend/app.js](frontend/app.js) and split in
   Methods: 7 (5 view, 2 write)
 ```
 
-### 2. Pytest Execution
+### 3. Pytest Execution
 ```
 tests/direct/test_registry.py ...............                           [100%]
-15 passed in 0.54s
+15 passed in 0.46s
 ```
 Covered tests:
 - `test_approved_mint_success` (Happy path approved mint)

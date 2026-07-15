@@ -13,6 +13,10 @@
 
 Preserve the existing AI NFT Studio dashboard design while replacing every Ritual-specific contract, network, precompile, scheduler, credit, mock-success, and wallet integration with a real GenLayer workflow.
 
+# Migration Target: GenLayer Studionet
+
+Port to GenLayer Studionet. Maintain dark theme style.
+
 The product is a consensus-curated AI artwork registry. A creator submits a title, an art prompt, and a public HTTPS image URL. A GenLayer Intelligent Contract fetches the image and asks independent AI validators to judge prompt alignment, visual quality, originality, and safety. The contract reaches semantic consensus on the decision. Approved work is assigned a GenLayer-native artwork token ID and stored in the on-chain registry; other work receives a `REVISE` or `REJECTED` verdict with actionable feedback.
 
 One-line GenLayer fit:
@@ -43,9 +47,9 @@ Required facts from the agreed DOCX:
 
 Current network details to verify against live docs at implementation time:
 
-- Bradbury GenLayer RPC: `https://rpc-bradbury.genlayer.com`
-- Bradbury chain ID: `4221`
-- Explorer: `https://explorer-bradbury.genlayer.com`
+- Studionet GenLayer RPC: `https://studio.genlayer.com/api`
+- Studionet chain ID: `61999` (Hex: `0xf22f`)
+- Explorer: `https://explorer-studio.genlayer.com`
 - Currency: `GEN`
 - `genlayer-js` current npm release observed during preflight: `1.1.8`
 
@@ -123,7 +127,7 @@ Required stack:
 Required behavior:
 
 - Preserve the current dark glassmorphic design, logo treatment, spacing, cards, pipeline, modal, gallery, toasts, and responsive layout.
-- Replace all Ritual wording and logic with GenLayer Bradbury.
+- Replace all Ritual wording and logic with GenLayer Studionet.
 - Remove credits, Google AI key, Pollinations fallback, Ritual precompile addresses, scheduler, mock mode, Ethers ABI, and fake-success paths.
 - Connected workspace should show real wallet address, GEN balance, total minted count, submission form, three-stage consensus pipeline, latest verdict, and minted gallery.
 - Submission fields: NFT title, prompt, public HTTPS image URL.
@@ -144,7 +148,7 @@ Update the landing page without changing its design language:
 - GenLayer-native hero copy
 - explain the consensus curation pipeline
 - explain why GenLayer is required
-- links to Bradbury explorer, GenLayer Studio, and the new GitHub repository
+- links to Studionet explorer, GenLayer Studio, and the new GitHub repository
 - no Ritual or mock-mode copy
 
 Create a complete `README.md` with:
@@ -155,7 +159,7 @@ Create a complete `README.md` with:
 - local setup
 - direct tests and lint commands
 - Studio deployment steps
-- Bradbury deployment/network configuration
+- Studionet deployment/network configuration
 - frontend environment variables
 - Vercel deployment steps
 - transaction verification rule (`FINALIZED` + successful execution result)
@@ -204,7 +208,7 @@ Do not commit, push, create a GitHub repository, or deploy. Codex owns integrati
 - fake AI/mint success in production
 - centralized backend deciding the verdict
 - off-chain LLM replacing the contract jury
-- automatic Bradbury deployment without an authorized funded account
+- automatic Studionet deployment without an authorized funded account
 - automatic Vercel deployment before a real contract address exists
 - GitHub push by Antigravity
 

@@ -94,7 +94,7 @@ Use Vite + vanilla HTML/CSS/JavaScript + current `genlayer-js`. Do not migrate t
 
 Preserve the source dark glassmorphic layout, cards, pipeline, modal, gallery, toasts, logo treatment, spacing, and responsive behavior. Replace all Ritual/precompile/scheduler/credits/mock/Google-key/Pollinations/Ethers logic.
 
-Use GenLayer Bradbury configuration verified from current docs. Contract address must come only from `VITE_CONTRACT_ADDRESS`; never fabricate an address.
+Use GenLayer Studionet configuration verified from current docs. Contract address must come only from `VITE_CONTRACT_ADDRESS`; never fabricate an address.
 
 Use separate read and browser-wallet write clients. Connect/switch wallet network before writing. Submit through the real Intelligent Contract. Show:
 
@@ -111,7 +111,7 @@ Wait for `FINALIZED`. Only show success when the execution result is successful 
 
 ## Landing page and README
 
-Keep the design language, but replace Ritual copy with GenLayer copy. Explain the consensus curation pipeline and why the product cannot exist without GenLayer. README must document architecture, contract methods, local setup, lint/test/build, Studio reset/sanity/main deployment, Bradbury network configuration, frontend env, Vercel release, and the FINALIZED-plus-success verification rule. Never publish placeholder addresses as real.
+Keep the design language, but replace Ritual copy with GenLayer copy. Explain the consensus curation pipeline and why the product cannot exist without GenLayer. README must document architecture, contract methods, local setup, lint/test/build, Studio reset/sanity/main deployment, Studionet network configuration, frontend env, Vercel release, and the FINALIZED-plus-success verification rule. Never publish placeholder addresses as real.
 
 ## Verification commands
 
