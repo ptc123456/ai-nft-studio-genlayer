@@ -1,0 +1,16 @@
+{
+  "name": "ai-nft-studio-genlayer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "genlayer-js": "1.1.8"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

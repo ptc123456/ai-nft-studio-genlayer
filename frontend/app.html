@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI NFT Studio Dashboard — connect GenLayer wallet, submit artwork for AI consensus curation, and mint on Bradbury testnet.">
+  <title>Dashboard · AI NFT Studio</title>
+  
+  <!-- Google Fonts Outfit & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <nav class="nav" aria-label="Primary">
+      <div class="logo">
+        <a href="index.html" class="logo" style="color: inherit;">
+          <span class="logo-mark" aria-hidden="true"></span>
+          AI NFT Studio
+        </a>
+      </div>
+      
+      <div class="nav-actions">
+        <!-- Configuration Warning badge if VITE_CONTRACT_ADDRESS is missing -->
+        <div id="config-badge" class="badge badge-error hidden">
+          <i class="fa-solid fa-triangle-exclamation"></i> Config Missing
+        </div>
+
+        <!-- Network Status -->
+        <div id="network-badge" class="badge badge-network hidden">
+          <i class="fa-solid fa-circle-nodes"></i> GenLayer Bradbury
+        </div>
+
+        <!-- Wallet Button -->
+        <button id="btn-connect" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-wallet"></i> Connect Wallet
+        </button>
+        <div id="wallet-info" class="wallet-info hidden">
+          <span id="wallet-address" class="address-tag" style="background: rgba(255,255,255,0.05); padding: 0.5rem 0.8rem; border-radius: 8px; font-family: var(--font-mono); font-size: 0.85rem; border: 1px solid var(--border);">0x...</span>
+          <button id="btn-disconnect" class="btn btn-ghost btn-sm" title="Disconnect"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="app-shell">
+      <!-- Configuration Alert -->
+      <div id="alert-config" class="glass hidden" style="margin-bottom: 1.5rem; text-align: center; padding: 2rem; border-color: rgba(239, 68, 68, 0.4);">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 1rem; opacity: 0.8;"></i>
+        <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">Intelligent Contract Address Missing</h2>
+        <p class="lead" style="margin-bottom: 0; font-size: 0.95rem;">Please set the <code>VITE_CONTRACT_ADDRESS</code> environment variable in your <code>.env</code> file to interact with the curation registry.</p>
+      </div>
+
+      <!-- Unconnected Alert -->
+      <div id="alert-connect" class="glass" style="margin-bottom: 1.5rem; text-align: center; padding: 2rem;">
+        <i class="fa-solid fa-wallet" style="font-size: 2.5rem; color: var(--accent-2); margin-bottom: 1rem; opacity: 0.8;"></i>
+        <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">GenLayer Extension Required</h2>
+        <p class="lead" style="margin-bottom: 1.2rem; font-size: 0.95rem;">Please connect your GenLayer browser wallet to Bradbury Testnet network to interact with the registry.</p>
+        <button id="btn-connect-alert" class="btn btn-primary"><i class="fa-solid fa-plug"></i> Connect Wallet</button>
+      </div>
+
+      <!-- App Work Grid -->
+      <div class="panel-grid hidden" id="app-grid">
+        <!-- Left Panel: Form & Actions -->
+        <section class="panel">
+          <!-- Balances & Stats -->
+          <div class="glass">
+            <h2>Ledger Stats</h2>
+            <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Values synchronized directly from Bradbury network.</p>
+            <div class="balances-row">
+              <div class="bal-card">
+                <span class="bal-label">GEN Balance</span>
+                <span class="bal-val" id="val-balance">0.0000</span>
+              </div>
+              <div class="bal-card">
+                <span class="bal-label">Total Minted</span>
+                <span class="bal-val" id="val-minted">0</span>
+              </div>
+              <div class="bal-card">
+                <span class="bal-label">Total Submissions</span>
+                <span class="bal-val" id="val-submissions">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Artwork -->
+          <div class="glass">
+            <h2>Submit Artwork for Curation</h2>
+            <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Provide title, prompt guidelines, and a public HTTPS image link.</p>
+            
+            <form id="form-curate" novalidate>
+              <div class="field">
+                <label for="input-title">Artwork Title (2 - 80 characters)</label>
+                <input type="text" id="input-title" placeholder="e.g. Cybernetic Astronaut" required>
+                <div class="input-indicator" id="title-indicator">
+                  <span id="title-char-count">0</span>/80
+                </div>
+                <span class="error-msg" id="error-title"></span>
+              </div>
+
+              <div class="field">
+                <label for="input-prompt">Creator Prompt (20 - 800 characters)</label>
+                <textarea id="input-prompt" placeholder="Describe the visual composition, stylistic details, color scheme and expected artistic elements..." rows="4" required></textarea>
+                <div class="input-indicator" id="prompt-indicator">
+                  <span id="prompt-char-count">0</span>/800
+                </div>
+                <span class="error-msg" id="error-prompt"></span>
+              </div>
+
+              <div class="field">
+                <label for="input-url">Artwork Image URL (HTTPS, max 500 characters)</label>
+                <input type="url" id="input-url" placeholder="https://example.com/artwork.png" required>
+                <div class="input-indicator" id="url-indicator">
+                  <span id="url-char-count">0</span>/500
+                </div>
+                <span class="error-msg" id="error-url"></span>
+              </div>
+
+              <button type="submit" id="btn-submit" class="btn btn-primary btn-large" style="margin-top: 1rem;">
+                <i class="fa-solid fa-gavel"></i> Submit to AI Consensus Curation
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Right Panel: Active Job & Gallery -->
+        <section class="panel">
+          <!-- Active Job Status -->
+          <div class="glass hidden" id="card-status">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+              <h2 style="margin: 0;"><i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-2);"></i> Active Pipeline</h2>
+              <span id="lbl-job-status" style="font-size: 0.78rem; font-weight: 700; color: var(--accent-2); background: rgba(59,130,246,0.1); padding: 0.25rem 0.55rem; border-radius: 20px;">Processing</span>
+            </div>
+            
+            <div style="height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 1.2rem;">
+              <div id="job-progress-bar" style="width: 10%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.4s ease;"></div>
+            </div>
+
+            <div class="pipeline" style="margin-bottom: 1.5rem;">
+              <div class="pipe-step" id="step-submit">
+                <span class="idx">1</span>
+                <span>Submitting Transaction</span>
+                <span class="step-status" id="status-submit">Pending</span>
+              </div>
+              <div class="pipe-step" id="step-consensus">
+                <span class="idx">2</span>
+                <span>AI Jury Consensus Curation</span>
+                <span class="step-status" id="status-consensus">Pending</span>
+              </div>
+              <div class="pipe-step" id="step-finalize">
+                <span class="idx">3</span>
+                <span>Finalizing Ledger Registry</span>
+                <span class="step-status" id="status-finalize">Pending</span>
+              </div>
+            </div>
+
+            <!-- Consensus Verdict Output Detail -->
+            <div id="verdict-detail" class="verdict-card hidden">
+              <div class="verdict-header">
+                <h3>Consensus Curation Verdict</h3>
+                <span id="verdict-badge" class="verdict-badge">PENDING</span>
+              </div>
+              <div class="scores-grid">
+                <div class="score-card">
+                  <span class="score-label">Alignment</span>
+                  <span class="score-val" id="score-alignment">0</span>
+                </div>
+                <div class="score-card">
+                  <span class="score-label">Quality</span>
+                  <span class="score-val" id="score-quality">0</span>
+                </div>
+                <div class="score-card">
+                  <span class="score-label">Originality</span>
+                  <span class="score-val" id="score-originality">0</span>
+                </div>
+                <div class="score-card">
+                  <span class="score-label">Safety</span>
+                  <span class="score-val" id="score-safety">0</span>
+                </div>
+              </div>
+              <div class="weighted-score-row">
+                <span>Weighted Score:</span>
+                <strong id="score-weighted">0 / 100</strong>
+              </div>
+              
+              <!-- Persona Breakdowns -->
+              <div class="persona-accordion">
+                <div class="persona-item">
+                  <strong><i class="fa-solid fa-palette"></i> Curator Persona:</strong>
+                  <p id="curator-reason">Evaluating prompt alignment...</p>
+                </div>
+                <div class="persona-item">
+                  <strong><i class="fa-solid fa-magnifying-glass"></i> Skeptic Persona:</strong>
+                  <p id="skeptic-reason">Analyzing originality...</p>
+                </div>
+                <div class="persona-item">
+                  <strong><i class="fa-solid fa-shield-halved"></i> Ethicist Persona:</strong>
+                  <p id="ethicist-reason">Verifying content safety...</p>
+                </div>
+              </div>
+
+              <!-- Actionable revision feedback if verdict is REVISE -->
+              <div id="revision-box" class="revision-box hidden">
+                <strong><i class="fa-solid fa-pen-to-square"></i> Actionable Revision Feedback:</strong>
+                <p id="revision-feedback" style="margin-top: 0.35rem; margin-bottom: 0;"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- NFT Gallery -->
+          <div class="glass">
+            <div class="gallery-header">
+              <h2 style="margin: 0;">Registered Artworks Gallery</h2>
+              <button id="btn-refresh-gallery" class="btn btn-ghost btn-sm" title="Refresh Collection">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="gallery-loading" class="gallery-state hidden">
+              <i class="fa-solid fa-circle-notch fa-spin"></i>
+              <p style="margin-top: 0.5rem;">Scanning artwork registry on-chain...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="gallery-empty" class="gallery-state">
+              <i class="fa-regular fa-folder-open"></i>
+              <p style="margin-top: 0.5rem;">No registered artworks found in this wallet.</p>
+            </div>
+
+            <!-- Grid -->
+            <div id="gallery-grid" class="gallery-grid hidden"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>
+        AI NFT Studio Dashboard · Connected to GenLayer Bradbury Testnet · 
+        <a href="index.html">Landing Page</a> · 
+        <a href="https://github.com/ptc123456/ai-nft-studio-genlayer" target="_blank" rel="noopener">GitHub</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- Owner Transfer Modal -->
+  <div id="transfer-modal" class="modal hidden">
+    <div class="modal-overlay" id="transfer-overlay"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="btn-close-transfer"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-body">
+        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-share-from-square"></i> Transfer Ownership</h2>
+        <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.2rem;">Transfer this consensus-approved artwork to a new GenLayer account.</p>
+        
+        <div class="field">
+          <label>Token ID</label>
+          <input type="text" id="transfer-token-id" readonly style="background: rgba(0, 0, 0, 0.2); border-color: rgba(255,255,255,0.05); font-family: var(--font-mono);">
+        </div>
+
+        <div class="field">
+          <label for="transfer-recipient">Recipient GenLayer Address</label>
+          <input type="text" id="transfer-recipient" placeholder="e.g. 0x7a89..." required style="font-family: var(--font-mono);">
+          <span class="error-msg" id="error-transfer"></span>
+        </div>
+
+        <div style="display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button id="btn-cancel-transfer" class="btn btn-ghost">Cancel</button>
+          <button id="btn-confirm-transfer" class="btn btn-primary">Confirm Transfer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
