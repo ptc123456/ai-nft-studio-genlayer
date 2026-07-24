@@ -1,6 +1,6 @@
-# AI NFT Studio — Gemini Generation + GenLayer Curation
+# AI NFT Studio - Gemini Generation + GenLayer Curation
 
-AI NFT Studio turns a user's title and description into NFT artwork with **Gemini 3.1 Flash Image**, stores the generated image on **Vercel Blob**, and submits it automatically to a **GenLayer Intelligent Contract**. GenLayer's validator consensus—not the Gemini server—decides whether the artwork is approved and minted, returned for revision, or rejected.
+AI NFT Studio turns a user's title and description into NFT artwork with **Gemini 3.1 Flash Image**, stores the generated image on **Vercel Blob**, and submits it automatically to a **GenLayer Intelligent Contract**. GenLayer's validator consensus-not the Gemini server-decides whether the artwork is approved and minted, returned for revision, or rejected.
 
 ## 1. Core Architecture: Why GenLayer?
 
