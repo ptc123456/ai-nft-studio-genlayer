@@ -62,7 +62,6 @@ function injectLinks() {
 function initUI() {
   const titleInput = document.getElementById('input-title');
   const promptInput = document.getElementById('input-prompt');
-  const urlInput = document.getElementById('input-url');
 
   if (titleInput) {
     titleInput.addEventListener('input', () => {
@@ -86,20 +85,6 @@ function initUI() {
       } else {
         promptInput.classList.remove('invalid-input');
         clearError('prompt');
-      }
-    });
-  }
-
-  if (urlInput) {
-    urlInput.addEventListener('input', () => {
-      const len = urlInput.value.length;
-      const val = urlInput.value;
-      document.getElementById('url-char-count').textContent = len;
-      if (!val.startsWith('https://') || len > 500) {
-        urlInput.classList.add('invalid-input');
-      } else {
-        urlInput.classList.remove('invalid-input');
-        clearError('url');
       }
     });
   }
@@ -290,7 +275,6 @@ async function handleCurationSubmit(e) {
 
   const title = document.getElementById('input-title').value.trim();
   const prompt = document.getElementById('input-prompt').value.trim();
-  const url = document.getElementById('input-url').value.trim();
 
   let hasError = false;
 
@@ -310,17 +294,6 @@ async function handleCurationSubmit(e) {
     clearError('prompt');
   }
 
-  // Validation URL
-  if (!url || !url.startsWith('https://')) {
-    setError('url', 'URL must be a public HTTPS link (starts with https://).');
-    hasError = true;
-  } else if (url.length > 500) {
-    setError('url', 'Artwork URL must be at most 500 characters.');
-    hasError = true;
-  } else {
-    clearError('url');
-  }
-
   if (hasError) {
     showToast('Please correct validation errors before submitting.', 'error');
     return;
@@ -331,16 +304,31 @@ async function handleCurationSubmit(e) {
   
   // Reset active pipeline status
   showElement('card-status');
-  updatePipelineStep('submit', 'processing', 'Broadcasting to GenLayer...');
+  updatePipelineStep('submit', 'processing', 'Generating artwork...');
   updatePipelineStep('consensus', 'pending', 'Pending');
   updatePipelineStep('finalize', 'pending', 'Pending');
-  document.getElementById('job-progress-bar').style.width = '15%';
+  document.getElementById('job-progress-bar').style.width = '10%';
   hideElement('verdict-detail');
   hideElement('revision-box');
+  hideElement('generated-preview');
+  document.getElementById('generated-image').removeAttribute('src');
+
+  let phase = 'generation';
 
   try {
-    // 1. Submit Tx
-    showToast('Sending transaction...', 'info');
+    // 1. Generate the image server-side. The Gemini key never reaches this browser.
+    showToast('Gemini is generating your artwork...', 'info');
+    const url = await generateArtwork(title, prompt);
+    document.getElementById('generated-image').src = url;
+    document.getElementById('generation-status').textContent = 'Image generated and stored securely. Confirm the GenLayer transaction to start consensus.';
+    showElement('generated-preview');
+    updatePipelineStep('submit', 'success', 'Image Ready');
+    updatePipelineStep('consensus', 'processing', 'Confirm in wallet...');
+    document.getElementById('job-progress-bar').style.width = '30%';
+    showToast('Artwork generated. Please confirm the GenLayer transaction.', 'success');
+
+    // 2. Submit the generated image URL internally to GenLayer.
+    phase = 'transaction';
     const txHash = await writeClient.writeContract({
       address: CONTRACT_ADDRESS,
       functionName: 'curate_and_mint',
@@ -349,12 +337,12 @@ async function handleCurationSubmit(e) {
     });
 
     console.log('Transaction broadcasted. Hash:', txHash);
-    updatePipelineStep('submit', 'success', 'Broadcasted');
     updatePipelineStep('consensus', 'processing', 'Consensus Active...');
-    document.getElementById('job-progress-bar').style.width = '45%';
+    document.getElementById('job-progress-bar').style.width = '50%';
     showToast('Transaction broadcasted! Consensus active...', 'info');
 
-    // 2. Poll Transaction Consensus Phase
+    // 3. Poll Transaction Consensus Phase
+    phase = 'consensus';
     let receipt = null;
     let retries = 0;
     const maxRetries = 60; // 2 minutes polling timeout
@@ -397,7 +385,8 @@ async function handleCurationSubmit(e) {
     document.getElementById('job-progress-bar').style.width = '80%';
     showToast('Consensus completed! Settling...', 'info');
 
-    // 3. Finalize
+    // 4. Finalize
+    phase = 'finalize';
     const finalReceipt = await readClient.waitForTransactionReceipt({
       hash: txHash,
       status: TransactionStatus.FINALIZED
@@ -450,14 +439,48 @@ async function handleCurationSubmit(e) {
     await refreshDashboard();
   } catch (err) {
     console.error('Curation flow error:', err);
-    updatePipelineStep('submit', 'error', 'Failed');
-    updatePipelineStep('consensus', 'error', 'Aborted');
-    updatePipelineStep('finalize', 'error', 'Aborted');
+    if (phase === 'generation') {
+      updatePipelineStep('submit', 'error', 'Generation Failed');
+      updatePipelineStep('consensus', 'pending', 'Not Started');
+      updatePipelineStep('finalize', 'pending', 'Not Started');
+    } else if (phase === 'transaction' || phase === 'consensus') {
+      updatePipelineStep('consensus', 'error', phase === 'transaction' ? 'Not Confirmed' : 'Consensus Failed');
+      updatePipelineStep('finalize', 'error', 'Aborted');
+    } else {
+      updatePipelineStep('finalize', 'error', 'Finalization Failed');
+    }
     document.getElementById('job-progress-bar').style.width = '0%';
-    showToast('Curation failed: ' + err.message, 'error');
+    showToast('AI NFT pipeline failed: ' + err.message, 'error');
   } finally {
     toggleFormInputs(false);
   }
+}
+
+async function generateArtwork(title, prompt) {
+  const response = await fetch('/api/generate-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ title, prompt })
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error('Image service returned an invalid response.');
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Gemini image generation failed.');
+  }
+
+  if (!payload?.url || !payload.url.startsWith('https://') || payload.url.length > 500) {
+    throw new Error('Image service did not return a valid public image URL.');
+  }
+
+  return payload.url;
 }
 
 // Display Curation Verdict details
@@ -520,7 +543,7 @@ function displayCurationVerdict(review) {
     
     revisionFeedback.innerHTML = formattedFeedback;
     showElement('revision-box');
-    showToast('Consensus verdict: REVISE. Adjust title/prompt/image and try again.', 'warning');
+    showToast('Consensus verdict: REVISE. Adjust the title or prompt and generate again.', 'warning');
   } else {
     badge.textContent = 'REJECTED';
     badge.classList.add('verdict-rejected');
@@ -605,7 +628,7 @@ function createArtworkCard(art) {
         ${escapeHtml(art.prompt)}
       </p>
       <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-ghost btn-sm btn-view-nft" style="flex: 1; border: 1px solid var(--border); font-size: 0.78rem;">View Link</button>
+        <button class="btn btn-ghost btn-sm btn-view-nft" style="flex: 1; border: 1px solid var(--border); font-size: 0.78rem;">View Image</button>
         <button class="btn btn-primary btn-sm btn-transfer-trigger" style="flex: 1; font-size: 0.78rem;" data-id="${art.token_id}"><i class="fa-solid fa-share-from-square"></i> Transfer</button>
       </div>
     </div>
@@ -708,7 +731,6 @@ function hideElement(id) {
 function toggleFormInputs(disabled) {
   document.getElementById('input-title').disabled = disabled;
   document.getElementById('input-prompt').disabled = disabled;
-  document.getElementById('input-url').disabled = disabled;
   document.getElementById('btn-submit').disabled = disabled;
 }
 
@@ -749,17 +771,17 @@ function updatePipelineStep(stepId, state, statusText) {
   
   if (!step || !statusSpan) return;
 
-  step.classList.remove('processing', 'success', 'error');
+  step.classList.remove('active', 'done', 'failed');
   statusSpan.textContent = statusText;
 
   if (state === 'processing') {
-    step.classList.add('processing');
+    step.classList.add('active');
     statusSpan.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${statusText}`;
   } else if (state === 'success') {
-    step.classList.add('success');
+    step.classList.add('done');
     statusSpan.innerHTML = `<i class="fa-solid fa-check"></i> ${statusText}`;
   } else if (state === 'error') {
-    step.classList.add('error');
+    step.classList.add('failed');
     statusSpan.innerHTML = `<i class="fa-solid fa-xmark"></i> ${statusText}`;
   }
 }

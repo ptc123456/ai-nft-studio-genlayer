@@ -1,15 +1,17 @@
-# AI NFT Studio — GenLayer Curation & Registry
+# AI NFT Studio — Gemini Generation + GenLayer Curation
 
-AI NFT Studio is a decentralized application built on **GenLayer**, demonstrating the power of Intelligent Contracts. It uses consensus-driven AI agents (virtual personas) to curate and register digital art directly on-chain.
+AI NFT Studio turns a user's title and description into NFT artwork with **Gemini 3.1 Flash Image**, stores the generated image on **Vercel Blob**, and submits it automatically to a **GenLayer Intelligent Contract**. GenLayer's validator consensus—not the Gemini server—decides whether the artwork is approved and minted, returned for revision, or rejected.
 
 ## 1. Core Architecture: Why GenLayer?
 
 In traditional blockchains, executing non-deterministic actions (like checking website status, rendering images, or querying LLMs) requires centralized or semi-decentralized oracles. 
 
-With **GenLayer**, these non-deterministic operations are executed natively within the contract consensus:
-1. **Web Evidence Curation**: The leader node loads the submitted artwork URL and captures the screenshot bytes on-chain via `gl.nondet.web.render`.
-2. **Consensus-Driven AI Jury**: The visual evidence is passed to an AI Jury consisting of three distinct virtual personas (Curator, Skeptic, and Ethicist).
-3. **Deterministic Verification**: Validator nodes run a strict, deterministic validation function (`validator_fn`) checking the leader's calculations and scoring consistency before committing the state write.
+Image generation and consensus have deliberately separate responsibilities:
+1. **Gemini Image Generation**: A server-only Vercel Function creates a square image from the user's title and prompt. `GEMINI_API_KEY` never reaches the browser bundle.
+2. **Public Evidence Storage**: The generated image is stored in a public Vercel Blob store. Its HTTPS URL is passed internally; the user never enters an image link.
+3. **GenLayer Web Evidence Curation**: The leader node loads the generated artwork URL and captures screenshot bytes through `gl.nondet.web.render`.
+4. **Consensus-Driven AI Jury**: The evidence is evaluated by three virtual personas (Curator, Skeptic, and Ethicist).
+5. **Deterministic Verification**: Validator nodes run `validator_fn` to verify calculations and scoring consistency before committing state.
 
 This guarantees that the artwork's visual quality, prompt alignment, safety, and metadata are verified by multiple nodes before it can be minted.
 
@@ -43,7 +45,13 @@ token_owners: TreeMap[u256, Address]     # Maps token ID to current owner addres
 ## 4. Curation Pipeline Flow
 
 ```
-[User Form Submit]
+[User enters title + prompt]
+       |
+       v
+[Vercel Function -> Gemini image generation]
+       |
+       v
+[Public Blob URL returned internally]
        │
        ▼
 [Deterministic Input Guards]
@@ -165,11 +173,26 @@ VITE_CONTRACT_ADDRESS=0x2676763dBD21891C5D4945d0e20D2108802C0997
 VITE_GITHUB_URL=https://github.com/ptc123456/ai-nft-studio-genlayer
 ```
 
+Server-side secrets are configured in Vercel Project Settings, never in a `VITE_*` variable:
+
+```env
+GEMINI_API_KEY=<server-only-sensitive-secret>
+BLOB_READ_WRITE_TOKEN=<injected-by-linked-vercel-blob-store>
+```
+
+Do not commit `.env`, `.env.local`, the Gemini key, or the Blob token. Variables prefixed with `VITE_` are public in the browser bundle and must never contain secrets.
+
 ### Vercel Deployment
-To host the frontend on Vercel:
-1. Link your repository on Vercel.
-2. In Project Settings, configure the Environment Variables (`VITE_CONTRACT_ADDRESS` and `VITE_GITHUB_URL`).
-3. Deploy the build configuration using `dist` as the output directory.
+To host the frontend and image API on Vercel:
+1. Link the repository to a Vercel project.
+2. Create a public Vercel Blob store and link it to the project.
+3. Add `GEMINI_API_KEY` as a **Sensitive** Production/Preview variable.
+4. Configure `VITE_CONTRACT_ADDRESS` and `VITE_GITHUB_URL`.
+5. Deploy with `vercel deploy --prod`; `vercel.json` builds Vite to `dist` and allows the image function up to 60 seconds.
+
+`POST /api/generate-image` accepts only a validated title and prompt, calls Gemini server-side, uploads the image, and returns a public URL. The browser passes that URL internally to the already-deployed `curate_and_mint` method.
+
+Gemini image generation consumes the Google AI project quota. A `503` response saying the quota is exhausted means the Vercel integration is working but the configured Gemini project needs image quota/billing or a replacement key; no secret is exposed to the browser.
 
 ---
 
@@ -192,3 +215,4 @@ The frontend client in `app.js` is split into:
 - **Deployed Contract Address**: `0x2676763dBD21891C5D4945d0e20D2108802C0997`
 - **Deployment Transaction Hash**: `0x112db6b1595f3f876388f733b2273070a09e32738824205bc6a4c3d108f9e4e3`
 - **Active Explorer**: [explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997](https://explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997)
+- **Production Web App**: [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/)

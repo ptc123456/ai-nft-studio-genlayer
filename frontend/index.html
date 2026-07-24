@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AI NFT Studio — decentralized AI NFT curation and verification powered by GenLayer Intelligent Contracts.">
+  <meta name="description" content="AI NFT Studio — generate NFT artwork with Gemini and curate it through GenLayer Intelligent Contract consensus.">
   <title>AI NFT Studio · GenLayer Studionet</title>
   
   <!-- Google Fonts Outfit & Space Grotesk -->
@@ -41,7 +41,7 @@
           <span>Unique. Verifiable. On-Chain.</span>
         </h1>
         <p class="lead">
-          AI NFT Studio evaluates your artwork using GenLayer Intelligent Contract consensus. Independent virtual AI personas (Curator, Skeptic, Ethicist) analyze visual evidence, score alignment, quality, originality, and safety, and execute a decentralized consensus-backed mint.
+          Describe an artwork and Gemini generates it for you. GenLayer's Intelligent Contract then asks independent AI personas (Curator, Skeptic, Ethicist) to analyze the visual result, score alignment, quality, originality, and safety, and execute a consensus-backed mint.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="app.html">Open Dashboard</a>
@@ -73,14 +73,14 @@
     <!-- How it Works -->
     <section class="section">
       <h2>How it works</h2>
-      <p class="sub">Three automated on-chain phases orchestrated by GenLayer consensus.</p>
+      <p class="sub">From a creative prompt to a consensus-curated NFT in one connected flow.</p>
       
       <div class="grid-3">
         <article class="glass step-card">
           <div class="step-num">1</div>
-          <h3>Submit Artwork</h3>
+          <h3>Generate with Gemini</h3>
           <p>
-            Creator submits an image URL, title, and prompt. GenLayer Intelligent Contract executes deterministic guards to reject duplicate URLs or malformed inputs.
+            Enter a title and visual description. Gemini creates a square NFT artwork and the app stores it at a public, immutable image URL automatically.
           </p>
         </article>
         
@@ -116,9 +116,9 @@
         </article>
         
         <article class="glass step-card">
-          <h3>Zero-Backend Pipeline</h3>
+          <h3>Server-Safe Generation</h3>
           <p>
-            All scoring, validation, and settlement are written in Python directly inside the GenLayer Intelligent Contract. Execution runs natively on-chain.
+            Gemini generation runs in a protected server function, while all scoring, validator consensus, verdict logic, ownership, and settlement remain in the GenLayer Intelligent Contract.
           </p>
         </article>
         
@@ -141,7 +141,7 @@
           <summary>What is AI NFT Studio?</summary>
           <div class="faq-body">
             <p>
-              AI NFT Studio is a dApp built on the **GenLayer Studionet** (Chain ID **61999**). It allows creators to register digital artwork on-chain by running it through decentralized AI jury consensus.
+              AI NFT Studio is a dApp on GenLayer Studionet (Chain ID 61999). Creators generate artwork from a prompt with Gemini, then register it through decentralized GenLayer AI jury consensus.
             </p>
           </div>
         </details>
@@ -151,7 +151,8 @@
           <div class="faq-body">
             <p>The processing pipeline runs through several asynchronous phases:</p>
             <ul>
-              <li><strong>Submission:</strong> The user sends a write transaction with the artwork URL, title, and prompt.</li>
+              <li><strong>Generation:</strong> Gemini creates an image from the user's title and prompt; the public storage URL is handled internally.</li>
+              <li><strong>Submission:</strong> The user confirms a transaction containing the title, prompt, and generated image reference.</li>
               <li><strong>Consensus leader:</strong> The leader node renders the artwork URL, queries the virtual AI personas (Curator, Skeptic, Ethicist), and aggregates their scores.</li>
               <li><strong>Validation:</strong> Validator nodes run a deterministic check to verify the mathematical correctness and consistency of the leader's scores before committing the block.</li>
               <li><strong>Settlement:</strong> If approved, a GenLayer-native artwork token ID is assigned and stored.</li>
@@ -182,7 +183,7 @@
     <!-- Footer -->
     <footer class="footer">
       <p>
-        AI NFT Studio on GenLayer Studionet · Deployed by Antigravity ·
+        AI NFT Studio on GenLayer Studionet · Gemini generation + GenLayer consensus ·
         <a href="app.html">Launch App</a> · 
         <a href="#docs">Docs</a> · 
         <a href="https://github.com/ptc123456/ai-nft-studio-genlayer" target="_blank" rel="noopener">GitHub</a>

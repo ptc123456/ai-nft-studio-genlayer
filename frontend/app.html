@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AI NFT Studio Dashboard — connect GenLayer wallet, submit artwork for AI consensus curation, and mint on Studionet.">
+  <meta name="description" content="AI NFT Studio Dashboard — generate artwork with Gemini, curate it through GenLayer consensus, and mint on Studionet.">
   <title>Dashboard · AI NFT Studio</title>
   
   <!-- Google Fonts Outfit & Space Grotesk -->
@@ -91,10 +91,10 @@
             </div>
           </div>
 
-          <!-- Submit Artwork -->
+          <!-- Generate Artwork -->
           <div class="glass">
-            <h2>Submit Artwork for Curation</h2>
-            <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Provide title, prompt guidelines, and a public HTTPS image link.</p>
+            <h2>Generate &amp; Mint AI Artwork</h2>
+            <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Describe your artwork. Gemini generates the image, then GenLayer's validator jury curates the result before minting.</p>
             
             <form id="form-curate" novalidate>
               <div class="field">
@@ -115,17 +115,18 @@
                 <span class="error-msg" id="error-prompt"></span>
               </div>
 
-              <div class="field">
-                <label for="input-url">Artwork Image URL (HTTPS, max 500 characters)</label>
-                <input type="url" id="input-url" placeholder="https://example.com/artwork.png" required>
-                <div class="input-indicator" id="url-indicator">
-                  <span id="url-char-count">0</span>/500
+              <div id="generated-preview" class="generation-preview hidden" aria-live="polite">
+                <div class="generation-preview-image">
+                  <img id="generated-image" alt="Gemini-generated artwork preview">
                 </div>
-                <span class="error-msg" id="error-url"></span>
+                <div class="generation-preview-copy">
+                  <strong><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini artwork ready</strong>
+                  <p id="generation-status">The generated image will be sent automatically to GenLayer consensus.</p>
+                </div>
               </div>
 
               <button type="submit" id="btn-submit" class="btn btn-primary btn-large" style="margin-top: 1rem;">
-                <i class="fa-solid fa-gavel"></i> Submit to AI Consensus Curation
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Generate, Curate &amp; Mint NFT
               </button>
             </form>
           </div>
@@ -147,17 +148,17 @@
             <div class="pipeline" style="margin-bottom: 1.5rem;">
               <div class="pipe-step" id="step-submit">
                 <span class="idx">1</span>
-                <span>Submitting Transaction</span>
+                <span>Gemini Image Generation</span>
                 <span class="step-status" id="status-submit">Pending</span>
               </div>
               <div class="pipe-step" id="step-consensus">
                 <span class="idx">2</span>
-                <span>AI Jury Consensus Curation</span>
+                <span>GenLayer AI Jury Consensus</span>
                 <span class="step-status" id="status-consensus">Pending</span>
               </div>
               <div class="pipe-step" id="step-finalize">
                 <span class="idx">3</span>
-                <span>Finalizing Ledger Registry</span>
+                <span>Registry Mint / Revision</span>
                 <span class="step-status" id="status-finalize">Pending</span>
               </div>
             </div>
