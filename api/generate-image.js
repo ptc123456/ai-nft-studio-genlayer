@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { GoogleGenAI } from '@google/genai';
 import { put } from '@vercel/blob';
 
-const MODEL = 'gemini-3.1-flash-image';
+const MODEL = 'pollinations-flux';
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 10;
+const RATE_LIMIT_MAX_REQUESTS = 15;
 const rateLimits = new Map();
 
 function sendJson(res, status, payload) {
@@ -57,24 +56,6 @@ function isRateLimited(req) {
   return current.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
-async function generateFallbackImage(title, prompt) {
-  const combinedPrompt = encodeURIComponent(`Polished square 1:1 NFT artwork titled "${title}". ${prompt}`);
-  const seed = Math.floor(Math.random() * 1000000);
-  const pollinationsUrl = `https://image.pollinations.ai/prompt/${combinedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
-  
-  const res = await fetch(pollinationsUrl);
-  if (!res.ok) {
-    throw new Error(`Fallback image generator failed with status ${res.status}`);
-  }
-  
-  const arrayBuffer = await res.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  if (buffer.length === 0) {
-    throw new Error('Fallback image returned empty buffer');
-  }
-  return buffer;
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -103,66 +84,33 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: 'Title must be between 2 and 80 characters.' });
   }
 
-  if (prompt.length < 20 || prompt.length > 800) {
-    return sendJson(res, 400, { error: 'Prompt must be between 20 and 800 characters.' });
+  if (prompt.length < 10 || prompt.length > 800) {
+    return sendJson(res, 400, { error: 'Prompt must be between 10 and 800 characters.' });
   }
 
-  let imageBuffer = null;
-  let mimeType = 'image/jpeg';
-  let usedModel = MODEL;
-
-  // Primary: Try Gemini AI if key is set
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const generationPrompt = [
-        `Create a polished square NFT artwork titled "${title}".`,
-        prompt,
-        'Produce one complete 1:1 composition with strong visual hierarchy and gallery-ready detail.',
-        'Do not add frames, UI elements, logos, captions, signatures, or written text unless the prompt explicitly asks for text.'
-      ].join('\n\n');
-
-      const interaction = await ai.interactions.create({
-        model: MODEL,
-        input: generationPrompt,
-        response_format: {
-          type: 'image',
-          mime_type: 'image/jpeg',
-          aspect_ratio: '1:1',
-          image_size: '1K'
-        }
-      });
-
-      const imageData = interaction.output_image?.data;
-      mimeType = interaction.output_image?.mime_type || 'image/jpeg';
-
-      if (imageData && mimeType.startsWith('image/')) {
-        imageBuffer = Buffer.from(imageData, 'base64');
-      }
-    } catch (error) {
-      console.warn('Gemini image generation quota exceeded or failed, attempting FLUX AI Engine fallback...', error?.message || error);
-    }
-  }
-
-  // Fallback: Use FLUX AI Engine if Gemini failed or key missing
-  if (!imageBuffer || imageBuffer.length === 0) {
-    try {
-      imageBuffer = await generateFallbackImage(title, prompt);
-      usedModel = 'pollinations-flux';
-    } catch (fallbackError) {
-      console.error('All image generation methods failed:', fallbackError);
-      return sendJson(res, 502, { error: 'Could not generate artwork image. Please try again.' });
-    }
-  }
-
-  // Store output to Vercel Blob or return data URL
   try {
-    const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType === 'image/webp' ? 'webp' : 'png';
+    const combinedPrompt = encodeURIComponent(`Polished square 1:1 NFT artwork titled "${title}". ${prompt}`);
+    const seed = Math.floor(Math.random() * 1000000);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${combinedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
+
+    const imgResponse = await fetch(pollinationsUrl);
+    if (!imgResponse.ok) {
+      throw new Error(`FLUX image engine returned status ${imgResponse.status}`);
+    }
+
+    const arrayBuffer = await imgResponse.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+
+    if (imageBuffer.length === 0 || imageBuffer.length > 10 * 1024 * 1024) {
+      throw new Error('INVALID_IMAGE_SIZE');
+    }
+
+    const mimeType = 'image/jpeg';
     let publicUrl = '';
 
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
-        const blob = await put(`ai-nft-studio/${randomUUID()}.${extension}`, imageBuffer, {
+        const blob = await put(`ai-nft-studio/${randomUUID()}.jpg`, imageBuffer, {
           access: 'public',
           addRandomSuffix: true,
           contentType: mimeType,
@@ -170,6 +118,7 @@ export default async function handler(req, res) {
         });
         publicUrl = blob.url;
       } catch (blobErr) {
+        console.warn('Vercel blob upload fallback to data URL:', blobErr?.message);
         publicUrl = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
       }
     } else {
@@ -179,10 +128,10 @@ export default async function handler(req, res) {
     return sendJson(res, 200, {
       url: publicUrl,
       contentType: mimeType,
-      model: usedModel
+      model: MODEL
     });
-  } catch (err) {
-    console.error('Failed to process image payload:', err);
-    return sendJson(res, 500, { error: 'Failed to process generated image.' });
+  } catch (error) {
+    console.error('FLUX AI image generation error:', error?.message || error);
+    return sendJson(res, 502, { error: 'Could not generate artwork. Please adjust your prompt and try again.' });
   }
 }
