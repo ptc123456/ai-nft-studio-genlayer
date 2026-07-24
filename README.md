@@ -2,7 +2,7 @@
 
 Decentralized AI artwork generation and consensus-based NFT curation on GenLayer.
 
-AI NFT Studio generates custom artwork using **Gemini 3.1 Flash Image**, stores the generated image on **Vercel Blob**, and submits the public evidence to a **GenLayer Intelligent Contract**. GenLayer's multi-validator AI jury—not a single server—evaluates prompt alignment, visual quality, and safety to approve and mint the NFT.
+AI NFT Studio generates custom artwork using **Gemini 3.1 Flash Image**, stores the generated image on **Vercel Blob**, and submits the public evidence to a **GenLayer Intelligent Contract**. GenLayer's multi-validator AI jury-not a single server—evaluates prompt alignment, visual quality, and safety to approve and mint the NFT.
 
 ```
 ┌─────────────────┐     ┌──────────────────────┐     ┌─────────────────────────────┐     ┌─────────────────┐
