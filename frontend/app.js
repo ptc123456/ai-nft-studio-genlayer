@@ -354,11 +354,12 @@ async function handleCurationSubmit(e) {
         const status = receipt.statusName || receipt.status;
         console.log('Current status:', status);
 
+        const strStatus = String(status).toUpperCase();
         if (status === 'PROPOSING' || status === 'COMMITTING' || status === 'REVEALING') {
           updatePipelineStep('consensus', 'processing', `Consensus Active (${status})`);
-        } else if (status === TransactionStatus.FINALIZED || status === 'ACCEPTED' || status === 'READY_TO_FINALIZE') {
+        } else if (status === TransactionStatus.FINALIZED || strStatus === 'FINALIZED' || strStatus === 'ACCEPTED' || strStatus === 'READY_TO_FINALIZE' || strStatus === '7') {
           break;
-        } else if (status === 'CANCELED' || status === 'UNDETERMINED' || status === 'VALIDATORS_TIMEOUT' || status === 'LEADER_TIMEOUT') {
+        } else if (status === 'CANCELED' || strStatus === 'UNDETERMINED' || status === 'VALIDATORS_TIMEOUT' || status === 'LEADER_TIMEOUT') {
           throw new Error(`Consensus failed with state: ${status}`);
         }
       } catch (err) {
@@ -371,7 +372,7 @@ async function handleCurationSubmit(e) {
       throw new Error('Consensus timeout reached. Please check the explorer.');
     }
 
-    const initialStatus = receipt.statusName || receipt.status;
+    const initialStatus = String(receipt.statusName || receipt.status).toUpperCase();
     if (initialStatus === 'UNDETERMINED') {
       updatePipelineStep('consensus', 'error', 'Undetermined');
       updatePipelineStep('finalize', 'error', 'Aborted');
@@ -394,11 +395,15 @@ async function handleCurationSubmit(e) {
 
     console.log('Finalized receipt:', finalReceipt);
     
-    const finalStatus = finalReceipt.statusName || finalReceipt.status;
-    const executionResult = finalReceipt.txExecutionResultName || finalReceipt.txExecutionResult;
+    const finalStatus = String(finalReceipt.statusName || finalReceipt.status).toUpperCase();
+    const rawExecResult = finalReceipt.txExecutionResultName || finalReceipt.txExecutionResult;
+    const executionResult = String(rawExecResult || '').toUpperCase();
 
-    if (finalStatus === TransactionStatus.FINALIZED) {
-      if (executionResult === ExecutionResult.FINISHED_WITH_RETURN) {
+    const isFinalized = finalStatus === 'FINALIZED' || finalStatus === 'ACCEPTED' || finalStatus === 'READY_TO_FINALIZE' || finalStatus === '7';
+    const isSuccess = executionResult === 'FINISHED_WITH_RETURN' || executionResult === 'SUCCESS' || executionResult === '0' || rawExecResult === 0 || !rawExecResult;
+
+    if (isFinalized) {
+      if (isSuccess) {
         updatePipelineStep('finalize', 'success', 'Settled');
         document.getElementById('job-progress-bar').style.width = '100%';
         
@@ -416,7 +421,7 @@ async function handleCurationSubmit(e) {
         } else {
           showToast('Transaction settled, but review could not be parsed.', 'warning');
         }
-      } else if (executionResult === ExecutionResult.FINISHED_WITH_ERROR) {
+      } else if (executionResult === 'FINISHED_WITH_ERROR') {
         updatePipelineStep('finalize', 'error', 'Execution Error');
         document.getElementById('job-progress-bar').style.width = '0%';
         showToast('Transaction failed: execution reverted on-chain.', 'error');
