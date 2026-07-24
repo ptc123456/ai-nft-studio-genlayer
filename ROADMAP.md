@@ -9,7 +9,7 @@ AI NFT Studio is a decentralized AI artwork generation and consensus-driven NFT 
 
 The V1 pipeline:
 1. **User Input:** A creator provides an artwork title and prompt.
-2. **Server-Side Generation:** A Vercel Serverless Function generates a 1:1 square JPEG artwork via Gemini 3.1 Flash Image and uploads it to a public Vercel Blob store.
+2. **Server-Side Generation:** A Vercel Serverless Function generates a 1:1 square JPEG artwork via high-performance FLUX AI Engine and uploads it to a public Vercel Blob store.
 3. **GenLayer Submission:** The public Blob URL and prompt metadata are submitted to `curate_and_mint` on the `AINFTStudio` Intelligent Contract.
 4. **On-Chain Evidence Fetch:** GenLayer validators fetch the rendered artwork directly via `gl.nondet.web.render()`.
 5. **AI Jury Consensus:** GenLayer evaluates the artwork using three virtual personas (**Curator** 35%, **Skeptic** 25%, **Ethicist** 40%) through `gl.nondet.exec_prompt()`.
@@ -36,6 +36,6 @@ Deployed `AINFTStudio.py` on GenLayer Studionet:
 - [ ] Community appeal mechanism for REVISE verdicts.
 
 ### Phase 2: Multi-Model & Cross-Chain Minting
-- [ ] Multi-LLM validator diversity (combining Gemini, Claude, and Llama validators).
+- [ ] Multi-LLM validator diversity (combining Claude, Llama, and Mistral validators).
 - [ ] Cross-chain NFT bridge to EVM chains (Ethereum / Polygon / Base) via LayerZero.
 - [ ] Decentralized IPFS / Arweave permanent metadata mirroring.
