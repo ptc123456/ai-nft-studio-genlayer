@@ -17,7 +17,7 @@ const ExecutionResult = {
 
 // Configuration
 const studioChainId = '0xf22f'; // Chain ID 61999 in hex
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '';
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x2676763dBD21891C5D4945d0e20D2108802C0997';
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL || 'https://github.com/ptc123456/ai-nft-studio-genlayer';
 const EXPLORER_URL = 'https://explorer-studio.genlayer.com/';
 
