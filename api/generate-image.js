@@ -84,8 +84,14 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: 'Title must be between 2 and 80 characters.' });
   }
 
-  if (prompt.length < 10 || prompt.length > 800) {
-    return sendJson(res, 400, { error: 'Prompt must be between 10 and 800 characters.' });
+  if (prompt.length < 20 || prompt.length > 800) {
+    return sendJson(res, 400, { error: 'Prompt must be between 20 and 800 characters.' });
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return sendJson(res, 503, {
+      error: 'Artwork storage is not configured. Link a Vercel Blob store and try again.'
+    });
   }
 
   try {
@@ -93,9 +99,24 @@ export default async function handler(req, res) {
     const seed = Math.floor(Math.random() * 1000000);
     const pollinationsUrl = `https://image.pollinations.ai/prompt/${combinedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true`;
 
-    const imgResponse = await fetch(pollinationsUrl);
+    const imgResponse = await fetch(pollinationsUrl, {
+      signal: AbortSignal.timeout(45_000)
+    });
     if (!imgResponse.ok) {
       throw new Error(`FLUX image engine returned status ${imgResponse.status}`);
+    }
+
+    const mimeType = (imgResponse.headers.get('content-type') || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase();
+    if (!mimeType.startsWith('image/')) {
+      throw new Error(`FLUX image engine returned invalid content type: ${mimeType || 'unknown'}`);
+    }
+
+    const declaredSize = Number(imgResponse.headers.get('content-length') || 0);
+    if (declaredSize > 10 * 1024 * 1024) {
+      throw new Error('INVALID_IMAGE_SIZE');
     }
 
     const arrayBuffer = await imgResponse.arrayBuffer();
@@ -105,24 +126,26 @@ export default async function handler(req, res) {
       throw new Error('INVALID_IMAGE_SIZE');
     }
 
-    const mimeType = 'image/jpeg';
-    let publicUrl = '';
+    const extension =
+      mimeType === 'image/png'
+        ? 'png'
+        : mimeType === 'image/webp'
+          ? 'webp'
+          : 'jpg';
+    const blob = await put(`ai-nft-studio/${randomUUID()}.${extension}`, imageBuffer, {
+      access: 'public',
+      addRandomSuffix: true,
+      contentType: mimeType,
+      cacheControlMaxAge: 31536000
+    });
+    const publicUrl = blob.url;
 
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      try {
-        const blob = await put(`ai-nft-studio/${randomUUID()}.jpg`, imageBuffer, {
-          access: 'public',
-          addRandomSuffix: true,
-          contentType: mimeType,
-          cacheControlMaxAge: 31536000
-        });
-        publicUrl = blob.url;
-      } catch (blobErr) {
-        console.warn('Vercel blob upload fallback to data URL:', blobErr?.message);
-        publicUrl = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
-      }
-    } else {
-      publicUrl = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
+    if (
+      typeof publicUrl !== 'string' ||
+      !publicUrl.startsWith('https://') ||
+      publicUrl.length > 500
+    ) {
+      throw new Error('INVALID_PUBLIC_ARTWORK_URL');
     }
 
     return sendJson(res, 200, {

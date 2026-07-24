@@ -1,19 +1,11 @@
 import { createClient, chains } from 'genlayer-js';
+import {
+  getExecutionOutcome,
+  getTransactionStatus,
+  isFinalized
+} from './transaction-state.js';
 
-// Enums replicate the TypeScript definitions from the SDK
-const TransactionStatus = {
-  FINALIZED: 'FINALIZED',
-  ACCEPTED: 'ACCEPTED',
-  UNDETERMINED: 'UNDETERMINED',
-  PENDING: 'PENDING',
-  CANCELED: 'CANCELED'
-};
-
-const ExecutionResult = {
-  FINISHED_WITH_RETURN: 'FINISHED_WITH_RETURN',
-  FINISHED_WITH_ERROR: 'FINISHED_WITH_ERROR',
-  NOT_VOTED: 'NOT_VOTED'
-};
+const FINALIZED_STATUS = 'FINALIZED';
 
 // Configuration
 const studioChainId = '0xf22f'; // Chain ID 61999 in hex
@@ -351,20 +343,25 @@ async function handleCurationSubmit(e) {
       await new Promise(r => setTimeout(r, 2000));
       try {
         receipt = await readClient.getTransaction({ hash: txHash });
-        const status = receipt.statusName || receipt.status;
-        console.log('Current status:', status);
-
-        const strStatus = String(status).toUpperCase();
-        if (status === 'PROPOSING' || status === 'COMMITTING' || status === 'REVEALING') {
-          updatePipelineStep('consensus', 'processing', `Consensus Active (${status})`);
-        } else if (status === TransactionStatus.FINALIZED || strStatus === 'FINALIZED' || strStatus === 'ACCEPTED' || strStatus === 'READY_TO_FINALIZE' || strStatus === '7') {
-          break;
-        } else if (status === 'CANCELED' || strStatus === 'UNDETERMINED' || status === 'VALIDATORS_TIMEOUT' || status === 'LEADER_TIMEOUT') {
-          throw new Error(`Consensus failed with state: ${status}`);
-        }
       } catch (err) {
         console.warn('Polling status fetch error:', err);
+        retries++;
+        continue;
       }
+
+      const status = getTransactionStatus(receipt);
+      console.log('Current status:', status);
+
+      if (['PROPOSING', 'COMMITTING', 'REVEALING'].includes(status)) {
+        updatePipelineStep('consensus', 'processing', `Consensus Active (${status})`);
+      } else if (['FINALIZED', 'ACCEPTED', 'READY_TO_FINALIZE'].includes(status)) {
+        break;
+      } else if (
+        ['CANCELED', 'UNDETERMINED', 'VALIDATORS_TIMEOUT', 'LEADER_TIMEOUT'].includes(status)
+      ) {
+        throw new Error(`Consensus failed with state: ${status}`);
+      }
+
       retries++;
     }
 
@@ -372,7 +369,7 @@ async function handleCurationSubmit(e) {
       throw new Error('Consensus timeout reached. Please check the explorer.');
     }
 
-    const initialStatus = String(receipt.statusName || receipt.status).toUpperCase();
+    const initialStatus = getTransactionStatus(receipt);
     if (initialStatus === 'UNDETERMINED') {
       updatePipelineStep('consensus', 'error', 'Undetermined');
       updatePipelineStep('finalize', 'error', 'Aborted');
@@ -390,20 +387,16 @@ async function handleCurationSubmit(e) {
     phase = 'finalize';
     const finalReceipt = await readClient.waitForTransactionReceipt({
       hash: txHash,
-      status: TransactionStatus.FINALIZED
+      status: FINALIZED_STATUS
     });
 
     console.log('Finalized receipt:', finalReceipt);
-    
-    const finalStatus = String(finalReceipt.statusName || finalReceipt.status).toUpperCase();
-    const rawExecResult = finalReceipt.txExecutionResultName || finalReceipt.txExecutionResult;
-    const executionResult = String(rawExecResult || '').toUpperCase();
 
-    const isFinalized = finalStatus === 'FINALIZED' || finalStatus === 'ACCEPTED' || finalStatus === 'READY_TO_FINALIZE' || finalStatus === '7';
-    const isSuccess = executionResult === 'FINISHED_WITH_RETURN' || executionResult === 'SUCCESS' || executionResult === '0' || rawExecResult === 0 || !rawExecResult;
+    const finalStatus = getTransactionStatus(finalReceipt);
+    const executionOutcome = getExecutionOutcome(finalReceipt);
 
-    if (isFinalized) {
-      if (isSuccess) {
+    if (isFinalized(finalReceipt)) {
+      if (executionOutcome.success === true) {
         updatePipelineStep('finalize', 'success', 'Settled');
         document.getElementById('job-progress-bar').style.width = '100%';
         
@@ -421,14 +414,17 @@ async function handleCurationSubmit(e) {
         } else {
           showToast('Transaction settled, but review could not be parsed.', 'warning');
         }
-      } else if (executionResult === 'FINISHED_WITH_ERROR') {
+      } else if (executionOutcome.success === false) {
         updatePipelineStep('finalize', 'error', 'Execution Error');
         document.getElementById('job-progress-bar').style.width = '0%';
         showToast('Transaction failed: execution reverted on-chain.', 'error');
       } else {
-        updatePipelineStep('finalize', 'error', 'Incomplete');
+        updatePipelineStep('finalize', 'error', 'Unverified');
         document.getElementById('job-progress-bar').style.width = '0%';
-        showToast(`Transaction aborted with status: ${executionResult}`, 'warning');
+        showToast(
+          `Transaction finalized, but execution could not be verified (${executionOutcome.name}). Check the explorer.`,
+          'warning'
+        );
       }
     } else if (finalStatus === 'UNDETERMINED') {
       updatePipelineStep('finalize', 'error', 'Undetermined');
@@ -697,18 +693,20 @@ async function confirmTransfer() {
     // Wait for finalization
     const receipt = await readClient.waitForTransactionReceipt({
       hash: txHash,
-      status: TransactionStatus.FINALIZED
+      status: FINALIZED_STATUS
     });
 
-    const status = receipt.statusName || receipt.status;
-    const executionResult = receipt.txExecutionResultName || receipt.txExecutionResult;
+    const status = getTransactionStatus(receipt);
+    const executionOutcome = getExecutionOutcome(receipt);
 
-    if (status === TransactionStatus.FINALIZED && executionResult === ExecutionResult.FINISHED_WITH_RETURN) {
+    if (isFinalized(receipt) && executionOutcome.success === true) {
       showToast('Transfer completed successfully!', 'success');
       closeTransferModal();
       await refreshDashboard();
     } else {
-      throw new Error(`Transfer failed on-chain with status: ${status}, result: ${executionResult}`);
+      throw new Error(
+        `Transfer was not verified as successful (status: ${status || 'UNKNOWN'}, result: ${executionOutcome.name}).`
+      );
     }
   } catch (err) {
     console.error('Transfer error:', err);
