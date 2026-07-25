@@ -16,6 +16,7 @@ class Contract(gl.Contract):
     reviews: TreeMap[u256, str]
     latest_submission: TreeMap[Address, str]
     token_to_submission: TreeMap[u256, u256]
+    submitted_urls: TreeMap[str, bool]
     minted_urls: TreeMap[str, u256]
     token_owners: TreeMap[u256, Address]
 
@@ -61,10 +62,10 @@ class Contract(gl.Contract):
         if len(artwork_url) > 500:
             raise gl.vm.UserError("Artwork URL must be at most 500 characters")
         
-        # Check duplicate already-minted artwork URLs
-        existing_token = self.minted_urls.get(artwork_url)
-        if existing_token is not None:
-            raise gl.vm.UserError("Artwork URL has already been minted")
+        # A public image URL represents one evidence reference. Reusing the same
+        # URL with different metadata would make the registry ambiguous.
+        if self.submitted_urls.get(artwork_url) is not None:
+            raise gl.vm.UserError("Artwork URL has already been submitted")
 
         # Convert closure inputs to primitive variables
         l_title = str(title)
@@ -306,65 +307,124 @@ class Contract(gl.Contract):
         def validator_fn(leader_result) -> bool:
             if not isinstance(leader_result, gl.vm.Return):
                 return False
-            
-            data = leader_result.calldata
-            if not isinstance(data, dict):
+
+            leader_data = leader_result.calldata
+            if not isinstance(leader_data, dict):
                 return False
 
-            # If the leader function encountered an error, verify it contains required keys
-            if "error" in data:
-                if "reason" not in data:
-                    return False
-                return True
-
-            # Required fields
-            required_keys = ["verdict", "alignment", "quality", "originality", "safety", "weighted_score", "reason", "revision"]
-            for k in required_keys:
-                if k not in data:
-                    return False
-
-            # Verdict value validation
-            verdict = data["verdict"]
-            if verdict not in ["APPROVED", "REVISE", "REJECTED"]:
+            # Validators independently fetch the same image and run the same
+            # jury task. This is the substantive consensus check; schema checks
+            # below are only defense-in-depth.
+            try:
+                validator_data = leader_fn()
+            except Exception:
                 return False
 
-            # Score range validation (0-100)
-            scores_keys = ["alignment", "quality", "originality", "safety", "weighted_score"]
-            for sk in scores_keys:
-                val = data[sk]
-                if not isinstance(val, int):
-                    return False
-                if val < 0 or val > 100:
-                    return False
-
-            # Reason/Revision validation
-            reason = data["reason"]
-            revision = data["revision"]
-            if not isinstance(reason, str) or not isinstance(revision, str):
-                return False
-            if len(reason) > 1000 or len(revision) > 1000:
+            if not isinstance(validator_data, dict):
                 return False
 
-            # Semantic consistency checks
-            alignment = data["alignment"]
-            quality = data["quality"]
-            originality = data["originality"]
-            safety = data["safety"]
-            weighted = data["weighted_score"]
-            
-            expected_weighted = (alignment * 35 + quality * 25 + originality * 20 + safety * 20) // 100
-            if weighted != expected_weighted:
+            allowed_errors = [
+                "web_render_fail",
+                "empty_evidence",
+                "oversized_evidence",
+                "llm_fail",
+                "malformed_json",
+                "unexpected_llm_shape",
+                "missing_persona",
+                "invalid_score"
+            ]
+
+            # A leader error is accepted only when the validator independently
+            # encounters the same class of failure. A one-sided or malformed
+            # error forces disagreement and leader rotation.
+            if "error" in leader_data or "error" in validator_data:
+                leader_error = leader_data.get("error")
+                validator_error = validator_data.get("error")
+                leader_reason = leader_data.get("reason")
+                validator_reason = validator_data.get("reason")
+                return (
+                    leader_error in allowed_errors
+                    and leader_error == validator_error
+                    and isinstance(leader_reason, str)
+                    and isinstance(validator_reason, str)
+                    and len(leader_reason) <= 500
+                    and len(validator_reason) <= 500
+                )
+
+            required_keys = [
+                "verdict",
+                "alignment",
+                "quality",
+                "originality",
+                "safety",
+                "weighted_score",
+                "reason",
+                "revision"
+            ]
+            score_keys = [
+                "alignment",
+                "quality",
+                "originality",
+                "safety",
+                "weighted_score"
+            ]
+
+            def is_valid_review(data) -> bool:
+                for key in required_keys:
+                    if key not in data:
+                        return False
+
+                if data["verdict"] not in ["APPROVED", "REVISE", "REJECTED"]:
+                    return False
+
+                for key in score_keys:
+                    value = data[key]
+                    if not isinstance(value, int) or isinstance(value, bool):
+                        return False
+                    if value < 0 or value > 100:
+                        return False
+
+                if not isinstance(data["reason"], str) or not isinstance(data["revision"], str):
+                    return False
+                if len(data["reason"]) > 500 or len(data["revision"]) > 500:
+                    return False
+
+                expected_weighted = (
+                    data["alignment"] * 35
+                    + data["quality"] * 25
+                    + data["originality"] * 20
+                    + data["safety"] * 20
+                ) // 100
+                if data["weighted_score"] != expected_weighted:
+                    return False
+
+                if data["safety"] < 70:
+                    expected_verdict = "REJECTED"
+                elif data["alignment"] < 55 or data["weighted_score"] < 70:
+                    expected_verdict = "REVISE"
+                else:
+                    expected_verdict = "APPROVED"
+
+                return data["verdict"] == expected_verdict
+
+            if not is_valid_review(leader_data) or not is_valid_review(validator_data):
                 return False
 
-            # Verdict consistency checks:
-            if safety < 70:
-                if verdict != "REJECTED":
-                    return False
-            elif alignment < 55 or weighted < 70:
-                if verdict != "REVISE":
-                    return False
-            else:
-                if verdict != "APPROVED":
+            # Consequential conclusions must match exactly. Raw model scores may
+            # vary, so bounded tolerance is allowed without permitting a score
+            # to cross any mint, revision, or rejection threshold.
+            if leader_data["verdict"] != validator_data["verdict"]:
+                return False
+            if (leader_data["safety"] < 70) != (validator_data["safety"] < 70):
+                return False
+            if (leader_data["alignment"] < 55) != (validator_data["alignment"] < 55):
+                return False
+            if (leader_data["weighted_score"] < 70) != (validator_data["weighted_score"] < 70):
+                return False
+
+            score_tolerance = 20
+            for key in score_keys:
+                if abs(leader_data[key] - validator_data[key]) > score_tolerance:
                     return False
 
             return True
@@ -417,6 +477,7 @@ class Contract(gl.Contract):
         review_json = json.dumps(review_data)
         self.reviews[submission_id] = review_json
         self.latest_submission[sender_addr] = review_json
+        self.submitted_urls[artwork_url] = True
 
         return token_id
 

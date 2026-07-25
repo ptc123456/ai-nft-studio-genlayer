@@ -9,6 +9,8 @@ const FINALIZED_STATUS = 'FINALIZED';
 
 // Configuration
 const studioChainId = '0xf22f'; // Chain ID 61999 in hex
+// Existing legacy deployment; update this fallback only after the revised
+// contract deployment is verified as FINALIZED with SUCCESS.
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x2676763dBD21891C5D4945d0e20D2108802C0997';
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL || 'https://github.com/ptc123456/ai-nft-studio-genlayer';
 const EXPLORER_URL = 'https://explorer-studio.genlayer.com/';
@@ -308,8 +310,8 @@ async function handleCurationSubmit(e) {
   let phase = 'generation';
 
   try {
-    // 1. Generate the image server-side. The Gemini key never reaches this browser.
-    showToast('Gemini is generating your artwork...', 'info');
+    // 1. Generate the image through the server-side FLUX endpoint.
+    showToast('FLUX is generating your artwork...', 'info');
     const url = await generateArtwork(title, prompt);
     document.getElementById('generated-image').src = url;
     document.getElementById('generation-status').textContent = 'Image generated and stored securely. Confirm the GenLayer transaction to start consensus.';
@@ -474,7 +476,7 @@ async function generateArtwork(title, prompt) {
   }
 
   if (!response.ok) {
-    throw new Error(payload?.error || 'Gemini image generation failed.');
+    throw new Error(payload?.error || 'FLUX image generation failed.');
   }
 
   if (!payload?.url || !payload.url.startsWith('https://') || payload.url.length > 500) {

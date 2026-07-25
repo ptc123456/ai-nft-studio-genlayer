@@ -1,102 +1,87 @@
 # AI NFT Studio
 
-> **Decentralized AI artwork generation and consensus-based NFT curation on GenLayer.**
+AI NFT Studio is a GenLayer artwork-curation dApp. A creator enters a title and prompt, a server-side FLUX image service generates a square image, and the frontend submits the public image URL to a Python Intelligent Contract. The contract records an `APPROVED`, `REVISE`, or `REJECTED` review; approved submissions receive a registry token ID with transferable ownership.
 
-AI NFT Studio generates custom artwork using a **FLUX image service**, stores the generated media on **Vercel Blob**, and submits the public evidence to a **GenLayer Intelligent Contract**. The contract evaluates prompt alignment, visual quality, originality, and safety before recording an approval, revision request, or rejection on-chain.
+## Trust problem
 
-```
-┌─────────────────┐     ┌──────────────────────┐     ┌─────────────────────────────┐     ┌─────────────────┐
-│  User Input     │     │ FLUX Engine & Vercel │     │      GenLayer Jury          │     │  On-Chain Mint  │
-│                 │     │                      │     │                             │     │                 │
-│ Title + Prompt  │────>│ Generate 1:1 Artwork │────>│ 3 AI Personas (Curator,     │────>│ Assign Token ID │
-│                 │     │ & Host Public Blob   │     │ Skeptic, Ethicist) Consensus│     │ & Store Review  │
-└─────────────────┘     └──────────────────────┘     └─────────────────────────────┘     └─────────────────┘
-```
+An artwork platform should not let its own server make the final, unverifiable decision about whether an image matches a prompt or satisfies the stated safety rules. A conventional smart contract cannot inspect a rendered image, while a centralized LLM API provides no shared validation or on-chain settlement. AI NFT Studio puts that consequential verdict inside GenLayer consensus: validators inspect the same public evidence and independently evaluate it before registry state can change.
 
----
+The image generator and Vercel Blob host remain centralized services. They produce and expose the evidence; they do not decide the on-chain verdict.
 
-## 1. The Problem
+## How it works
 
-Generative AI NFTs currently suffer from severe trust friction:
+1. The user enters a 2–80 character title and a 20–800 character visual prompt.
+2. `api/generate-image.js` requests a FLUX image from Pollinations and uploads the returned image to a public Vercel Blob URL.
+3. The browser calls `curate_and_mint(title, prompt, artwork_url)` with `genlayer-js`.
+4. The consensus leader renders the image with `gl.nondet.web.render(..., mode="screenshot")` and passes it to `gl.nondet.exec_prompt(..., images=[rendered])`.
+5. One jury task produces three structured perspectives: Curator, Skeptic, and Ethicist. Their scores are aggregated into alignment, quality, originality, and safety.
+6. Each validator independently renders the same URL and reruns the jury task. It requires the same verdict and threshold conclusions, permits at most 20 points of variation per aggregate score, and also verifies schema, ranges, weighted-score arithmetic, and verdict logic. Free-form reasons are not compared byte for byte.
+7. Safety below 70 produces `REJECTED`. Alignment below 55 or weighted score below 70 produces `REVISE`. Otherwise the result is `APPROVED`, a token ID is assigned, and registry ownership is stored.
+8. An exact artwork URL can be submitted only once after a completed review, including `REVISE` or `REJECTED` outcomes.
 
-1. **Centralized Mints:** Most AI NFT platforms mint tokens off-chain or rely on a single centralized server to generate and approve images. The creator or server admin can swap images or fake approvals.
-2. **No Visual Verification On-Chain:** Traditional blockchains (Ethereum, Solana) cannot inspect image content, evaluate prompt adherence, or enforce content safety rules inside a smart contract.
-3. **Unverifiable Decisions:** A centralized image or LLM API cannot provide shared finality, an auditable review record, or enforceable token ownership.
+## Why GenLayer
 
----
+The core operation is not image generation; it is reaching a shared verdict about visual evidence. GenLayer supplies web rendering, LLM execution inside an Intelligent Contract, validator re-execution under the Equivalence Principle, and consensus-backed state. Traditional deterministic contracts cannot perform the visual judgment, and a single backend or LLM response cannot independently confirm its own result.
 
-## 2. How It Works
+## Architecture
 
-1. **Generate Artwork:** The user provides a title and prompt. A serverless Vercel Function generates a 1:1 square image using the FLUX AI Image Engine and stores it on Vercel Blob.
-2. **Submit to GenLayer:** The public image URL and metadata are sent to `curate_and_mint` on the GenLayer Intelligent Contract.
-3. **Consensus Curation:** The leader node fetches the image via `gl.nondet.web.render` and evaluates it using one AI Jury prompt (`gl.nondet.exec_prompt`) containing Curator, Skeptic, and Ethicist roles. The current validator deterministically verifies the returned schema, score ranges, weighting, and verdict consistency.
-4. **On-Chain Settlement:** If approved (weighted score ≥ 70, safety ≥ 70, alignment ≥ 55), the contract assigns a unique `token_id` and records the immutable review metadata on-chain.
+| Layer | Implementation | Responsibility |
+| --- | --- | --- |
+| Web UI | Vanilla HTML, CSS, JavaScript, Vite | Wallet connection, prompt form, transaction state, review gallery, ownership transfer |
+| Image endpoint | Vercel Function, Pollinations FLUX, Vercel Blob | Generate an image and return a public HTTPS evidence URL |
+| Chain client | `genlayer-js` 1.1.8 | Studionet reads, writes, receipt polling, and execution verification |
+| Intelligent Contract | `contracts/registry.py`, GenVM `v0.2.16` | Evidence evaluation, validator consensus, review storage, token registry, transfer rules |
 
----
+Contract methods:
 
-## 3. Why GenLayer Is Essential
+- Write: `curate_and_mint`, `transfer_artwork`
+- View: `get_artwork`, `get_review`, `get_latest_review`, `get_total_minted`, `get_total_submissions`
 
-- **On-Chain Web Access:** GenLayer validators capture the rendered artwork directly from HTTPS URLs via `gl.nondet.web.render()`.
-- **Multi-Persona Evaluation:** Curator, Skeptic, and Ethicist roles are evaluated within the contract's jury prompt. They are structured perspectives in one nondeterministic evaluation, not three independent external services.
-- **Deterministic Verification:** The contract's `validator_fn` mathematically checks score weighting and verdict logic before committing state to the ledger.
-- **Trust Boundary:** The deployed V1 validator does not independently rerun the visual judgment. Independent evidence re-evaluation is planned as a future contract upgrade and will require redeployment.
+## Deployment status
 
----
+The repository now contains a release-candidate contract with independent validator re-evaluation. That contract revision is **not deployed yet**. The existing public deployment and live app predate this correction and must not be presented as evidence for the revised consensus behavior.
 
-## 4. Live Deployment
+| Existing public component | Location | Status |
+| --- | --- | --- |
+| Legacy Studionet contract | [`0x2676763dBD21891C5D4945d0e20D2108802C0997`](https://explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997) | Deployed before independent validator re-evaluation was added |
+| Existing Vercel app | [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/) | Currently configured for the legacy contract |
 
-| Component | Network | Address / Location | Description |
-|-----------|---------|--------------------|-------------|
-| `AINFTStudio.py` | GenLayer Studionet | [`0x2676763dBD21891C5D4945d0e20D2108802C0997`](https://explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997) | Intelligent Contract for AI Jury curation & NFT minting |
-| Frontend | Vercel | [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/) | Interactive UI for prompt entry, live consensus tracking & NFT gallery |
+Before submission, deploy `contracts/registry.py` as a new Studionet instance, verify the deployment transaction is `FINALIZED` with `SUCCESS`, replace `VITE_CONTRACT_ADDRESS` with that real address, deploy the frontend, and update this table. Do not use a placeholder contract address.
 
----
+## Setup
 
-## 5. Architecture & Contract Methods
+Requirements: Node.js 20.19+, Python virtual environment, current GenLayer development tools, and a linked Vercel Blob store.
 
-### Storage Layout
-- `next_submission_id: u256` — Counter for curation requests
-- `next_token_id: u256` — Monotonic counter for minted NFTs
-- `reviews: TreeMap[u256, str]` — Serialized JSON review metadata per submission
-- `token_owners: TreeMap[u256, Address]` — Token ownership registry
-- `minted_urls: TreeMap[str, u256]` — Deduplication mapping for image URLs
-
-### Key Methods
-- `curate_and_mint(title: str, prompt: str, artwork_url: str) -> u256`: Submits artwork for AI Jury evaluation and mints an NFT if approved.
-- `transfer_artwork(token_id: u256, new_owner: Address) -> bool`: Transfers NFT ownership to a new address.
-- `get_artwork(token_id: u256) -> str`: Returns token metadata, owner, and review report.
-- `get_review(submission_id: u256) -> str`: Fetches detailed JSON curation report.
-
----
-
-## 6. Quick Start
-
-### 1. Install Dependencies
-```bash
+```powershell
 npm ci
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-```
-
-### 2. Configure Environment
-Create `.env` with contract address:
-```env
-VITE_CONTRACT_ADDRESS=0x2676763dBD21891C5D4945d0e20D2108802C0997
-BLOB_READ_WRITE_TOKEN=<injected after linking a Vercel Blob store>
-```
-
-`BLOB_READ_WRITE_TOKEN` is required because the Intelligent Contract accepts only a public HTTPS artwork URL. The API returns an error instead of an unusable data URL when Blob storage is unavailable.
-
-### 3. Run Development Server
-```bash
+Copy-Item .env.example .env
 npm run dev
 ```
 
-### 4. Run Contract Tests
-```bash
+`BLOB_READ_WRITE_TOKEN` is server-side only and must be supplied by Vercel Blob. `VITE_CONTRACT_ADDRESS` is public configuration and must contain a verified deployment address.
+
+## Tests and validation
+
+```powershell
 .venv\Scripts\python.exe -m pytest -q
 npm run test:frontend
+.venv\Scripts\genvm-lint.exe check contracts\registry.py
+npm run build
 ```
 
-### 5. Transaction Lifecycle
+The Python suite covers approval, revision, rejection, malformed evidence/results, duplicate URLs, ownership transfer, and validator disagreement. In particular, it proves that a schema-valid leader `APPROVED` result is rejected when independent validator evaluation reaches `REVISE`. Frontend tests cover status normalization, `FINALIZED` detection, and execution-result verification.
 
-The frontend normalizes numeric and named GenLayer transaction statuses, waits for `FINALIZED`, and verifies execution through the SDK result or the Studionet leader receipt. Missing execution evidence is shown as unverified instead of being treated as success.
+## Transaction lifecycle
+
+The frontend submits the write, polls the transaction, waits for `FINALIZED`, and then checks the execution result. It displays success only when finalization and successful execution are both confirmed. A failed or unverified execution is shown as failure/undetermined and does not update the gallery as a successful mint. Transfers use the same finalization and execution checks.
+
+## Trust boundaries and limitations
+
+- Pollinations and Vercel Blob are centralized dependencies; generation or hosting failure prevents submission.
+- The contract verifies the rendered content available at the submitted URL during consensus. It does not content-hash the image or guarantee that the URL will remain available forever.
+- Duplicate protection is exact-URL based, not perceptual image matching.
+- Curator, Skeptic, and Ethicist are structured perspectives in one jury prompt, not separate providers or separate validators.
+- Validator results can vary. Consensus compares verdicts and threshold conclusions exactly and aggregate scores within a bounded tolerance.
+- Registry tokens are native records in this contract, not ERC-721 tokens and not bridged assets.
+- The release-candidate contract requires a new deployment; the existing Explorer address does not prove the corrected validator behavior.

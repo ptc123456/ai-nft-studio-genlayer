@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AI NFT Studio — generate NFT artwork with Gemini and curate it through GenLayer Intelligent Contract consensus.">
+  <meta name="description" content="AI NFT Studio — generate artwork with FLUX and curate it through GenLayer Intelligent Contract consensus.">
   <title>AI NFT Studio · GenLayer Studionet</title>
   
   <!-- Google Fonts Outfit & Space Grotesk -->
@@ -41,7 +41,7 @@
           <span>Unique. Verifiable. On-Chain.</span>
         </h1>
         <p class="lead">
-          Describe an artwork and Gemini generates it for you. GenLayer's Intelligent Contract then asks independent AI personas (Curator, Skeptic, Ethicist) to analyze the visual result, score alignment, quality, originality, and safety, and execute a consensus-backed mint.
+          Describe an artwork and the FLUX image service generates it for you. GenLayer validators then independently render and evaluate the result, using Curator, Skeptic, and Ethicist perspectives to reach a consensus-backed verdict.
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="app.html">Open Dashboard</a>
@@ -51,7 +51,7 @@
         <div class="meta-row">
           <span><strong>Network</strong> GenLayer Studionet</span>
           <span><strong>Chain ID</strong> 61999</span>
-          <span><strong>Consensus</strong> Independent Multi-Persona</span>
+          <span><strong>Consensus</strong> Independent Validator Review</span>
         </div>
       </div>
       
@@ -78,9 +78,9 @@
       <div class="grid-3">
         <article class="glass step-card">
           <div class="step-num">1</div>
-          <h3>Generate with Gemini</h3>
+          <h3>Generate with FLUX</h3>
           <p>
-            Enter a title and visual description. Gemini creates a square NFT artwork and the app stores it at a public, immutable image URL automatically.
+            Enter a title and visual description. A server-side FLUX service creates a square artwork and stores it at a public Vercel Blob URL.
           </p>
         </article>
         
@@ -88,7 +88,7 @@
           <div class="step-num">2</div>
           <h3>AI Consensus Jury</h3>
           <p>
-            Independent AI virtual personas (Curator, Skeptic, Ethicist) evaluate the artwork and prompt alignment, quality, originality, and safety.
+            Each validator independently renders the artwork and reruns the same jury task. Curator, Skeptic, and Ethicist are structured perspectives within that task.
           </p>
         </article>
         
@@ -111,14 +111,14 @@
         <article class="glass step-card">
           <h3>Decentralized AI Consensus</h3>
           <p>
-            Visual verification runs inside the consensus cycle, securing the NFT metadata from tampering. No centralized oracle is required.
+            Visual evaluation runs inside the consensus cycle. Validators compare verdicts, threshold conclusions, and bounded score differences before state is committed.
           </p>
         </article>
         
         <article class="glass step-card">
           <h3>Server-Safe Generation</h3>
           <p>
-            Gemini generation runs in a protected server function, while all scoring, validator consensus, verdict logic, ownership, and settlement remain in the GenLayer Intelligent Contract.
+            FLUX generation runs in a server function, while evidence evaluation, validator consensus, verdict logic, registry ownership, and settlement run in the GenLayer Intelligent Contract.
           </p>
         </article>
         
@@ -141,7 +141,7 @@
           <summary>What is AI NFT Studio?</summary>
           <div class="faq-body">
             <p>
-              AI NFT Studio is a dApp on GenLayer Studionet (Chain ID 61999). Creators generate artwork from a prompt with Gemini, then register it through decentralized GenLayer AI jury consensus.
+              AI NFT Studio is a dApp for GenLayer Studionet (Chain ID 61999). Creators generate artwork from a prompt with FLUX, then submit it to a GenLayer Intelligent Contract for consensus curation.
             </p>
           </div>
         </details>
@@ -151,10 +151,10 @@
           <div class="faq-body">
             <p>The processing pipeline runs through several asynchronous phases:</p>
             <ul>
-              <li><strong>Generation:</strong> Gemini creates an image from the user's title and prompt; the public storage URL is handled internally.</li>
+              <li><strong>Generation:</strong> The server-side FLUX service creates an image from the user's title and prompt and stores it at a public Vercel Blob URL.</li>
               <li><strong>Submission:</strong> The user confirms a transaction containing the title, prompt, and generated image reference.</li>
               <li><strong>Consensus leader:</strong> The leader node renders the artwork URL, queries the virtual AI personas (Curator, Skeptic, Ethicist), and aggregates their scores.</li>
-              <li><strong>Validation:</strong> Validator nodes run a deterministic check to verify the mathematical correctness and consistency of the leader's scores before committing the block.</li>
+              <li><strong>Validation:</strong> Validators independently render the same image and rerun the jury task. They require the verdict and threshold conclusions to agree, allow only bounded score variation, and apply schema and calculation checks as additional guards.</li>
               <li><strong>Settlement:</strong> If approved, a GenLayer-native artwork token ID is assigned and stored.</li>
             </ul>
           </div>
@@ -183,7 +183,7 @@
     <!-- Footer -->
     <footer class="footer">
       <p>
-        AI NFT Studio on GenLayer Studionet · Gemini generation + GenLayer consensus ·
+        AI NFT Studio on GenLayer Studionet · FLUX generation + GenLayer consensus ·
         <a href="app.html">Launch App</a> · 
         <a href="#docs">Docs</a> · 
         <a href="https://github.com/ptc123456/ai-nft-studio-genlayer" target="_blank" rel="noopener">GitHub</a>

@@ -109,8 +109,8 @@ def test_address_normalization_edge_cases(direct_vm, direct_deploy, direct_bob):
     assert "Invalid address type" in str(excinfo.value)
 
 
-def test_duplicate_mint_blocked(direct_vm, direct_deploy):
-    """Already minted image URLs are blocked immediately."""
+def test_duplicate_artwork_blocked_after_approval(direct_vm, direct_deploy):
+    """An approved image URL cannot be submitted a second time."""
     contract = direct_deploy("contracts/registry.py")
     
     direct_vm.mock_web("https://example.com/art.png", {"status": 200, "body": PNG_1x1})
@@ -118,8 +118,35 @@ def test_duplicate_mint_blocked(direct_vm, direct_deploy):
 
     contract.curate_and_mint("Cyber Neon", "A futuristic cybernetic explorer looking at stars", "https://example.com/art.png")
     
-    with direct_vm.expect_revert("Artwork URL has already been minted"):
+    with direct_vm.expect_revert("Artwork URL has already been submitted"):
         contract.curate_and_mint("Cyber Neon 2", "A futuristic cybernetic explorer looking at stars", "https://example.com/art.png")
+
+
+def test_duplicate_artwork_blocked_after_revision(direct_vm, direct_deploy):
+    """A REVISE result still reserves its evidence URL against replay."""
+    contract = direct_deploy("contracts/registry.py")
+
+    revise_response = get_good_llm_response()
+    for persona in revise_response.values():
+        persona["alignment"] = 40
+        persona["revision"] = "Regenerate the artwork to match the prompt."
+
+    direct_vm.mock_web("https://example.com/revise.png", {"status": 200, "body": PNG_1x1})
+    direct_vm.mock_llm(".*Art Jury.*", json.dumps(revise_response))
+
+    token_id = contract.curate_and_mint(
+        "Needs Revision",
+        "A futuristic cybernetic explorer looking at stars",
+        "https://example.com/revise.png"
+    )
+    assert int(token_id) == 0
+
+    with direct_vm.expect_revert("Artwork URL has already been submitted"):
+        contract.curate_and_mint(
+            "Retry Same Evidence",
+            "A different description cannot reuse identical evidence",
+            "https://example.com/revise.png"
+        )
 
 
 def test_transfer_unauthorized_and_success(direct_vm, direct_deploy, direct_bob):
@@ -289,16 +316,16 @@ def test_validator_fn_semantic_rules(direct_vm, direct_deploy):
     assert direct_vm.run_validator(leader_result=inconsistent) is False
 
 
-def test_validator_is_completely_deterministic(direct_vm, direct_deploy):
-    """The validator_fn does not invoke any non-deterministic methods (strict mock mode validation)."""
+def test_validator_rejects_schema_valid_but_semantically_wrong_verdict(direct_vm, direct_deploy):
+    """A well-formed leader result is rejected when independent review reaches REVISE."""
     contract = direct_deploy("contracts/registry.py")
-    
+
     # Trigger a run to capture the validator_fn
     direct_vm.mock_web("https://example.com/art.png", {"status": 200, "body": PNG_1x1})
     direct_vm.mock_llm(".*Art Jury.*", json.dumps(get_good_llm_response()))
     contract.curate_and_mint("Cyber Neon", "A futuristic cybernetic explorer looking at stars", "https://example.com/art.png")
 
-    good_agg = {
+    schema_valid_but_wrong = {
         "verdict": "APPROVED",
         "alignment": 90,
         "quality": 85,
@@ -308,12 +335,43 @@ def test_validator_is_completely_deterministic(direct_vm, direct_deploy):
         "reason": "Curator: OK; Skeptic: OK; Ethicist: OK",
         "revision": ""
     }
-    
-    # Enable strict mock mode: any non-deterministic call (like web rendering or LLM prompt execution)
-    # that is not explicitly mocked will throw MockNotFoundError.
-    # Since our validator_fn is strictly deterministic, it should execute and return True without throwing.
-    direct_vm._strict_mock_mode = True
-    assert direct_vm.run_validator(leader_result=good_agg) is True
+
+    independent_revise = get_good_llm_response()
+    for persona in independent_revise.values():
+        persona["alignment"] = 40
+        persona["reason"] = "The visual does not match the requested subject."
+        persona["revision"] = "Regenerate an image that matches the prompt."
+
+    # Official direct-mode consensus testing swaps mocks before run_validator()
+    # so the validator independently fetches and evaluates the same evidence.
+    direct_vm.clear_mocks()
+    direct_vm.mock_web("https://example.com/art.png", {"status": 200, "body": PNG_1x1})
+    direct_vm.mock_llm(".*Art Jury.*", json.dumps(independent_revise))
+
+    assert direct_vm.run_validator(leader_result=schema_valid_but_wrong) is False
+
+
+def test_validator_rejects_unconfirmed_leader_error(direct_vm, direct_deploy):
+    """A leader cannot force a curation failure when independent execution succeeds."""
+    contract = direct_deploy("contracts/registry.py")
+
+    direct_vm.mock_web("https://example.com/art.png", {"status": 200, "body": PNG_1x1})
+    direct_vm.mock_llm(".*Art Jury.*", json.dumps(get_good_llm_response()))
+    contract.curate_and_mint(
+        "Cyber Neon",
+        "A futuristic cybernetic explorer looking at stars",
+        "https://example.com/art.png"
+    )
+
+    direct_vm.clear_mocks()
+    direct_vm.mock_web("https://example.com/art.png", {"status": 200, "body": PNG_1x1})
+    direct_vm.mock_llm(".*Art Jury.*", json.dumps(get_good_llm_response()))
+
+    forged_error = {
+        "error": "web_render_fail",
+        "reason": "The leader claims that the evidence URL could not be rendered."
+    }
+    assert direct_vm.run_validator(leader_result=forged_error) is False
 
 
 def test_low_alignment_returns_revise_without_mint(direct_vm, direct_deploy):
