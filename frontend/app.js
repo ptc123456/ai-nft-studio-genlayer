@@ -617,6 +617,10 @@ async function loadGallery() {
 function createArtworkCard(art) {
   const card = document.createElement('article');
   card.className = 'gallery-card glass';
+  const artworkHash = typeof art.artwork_hash === 'string' ? art.artwork_hash : '';
+  const shortHash = artworkHash.length > 24
+    ? `${artworkHash.slice(0, 18)}…${artworkHash.slice(-8)}`
+    : artworkHash || 'Unavailable';
 
   card.innerHTML = `
     <div class="card-image-container">
@@ -629,6 +633,9 @@ function createArtworkCard(art) {
       </div>
       <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(art.prompt)}">
         ${escapeHtml(art.prompt)}
+      </p>
+      <p style="font-size: 0.68rem; color: var(--muted); font-family: var(--font-mono); margin-bottom: 0.8rem;" title="${escapeHtml(artworkHash)}">
+        Evidence: ${escapeHtml(shortHash)}
       </p>
       <div style="display: flex; gap: 0.5rem;">
         <button class="btn btn-ghost btn-sm btn-view-nft" style="flex: 1; border: 1px solid var(--border); font-size: 0.78rem;">View Image</button>

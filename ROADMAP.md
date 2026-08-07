@@ -6,9 +6,9 @@ This roadmap separates the current release candidate from future work. It does n
 
 The repository contains a complete prompt-to-registry flow: a Vercel Function requests a square image from Pollinations FLUX, stores it in Vercel Blob, and returns a public HTTPS evidence URL. The browser connects to GenLayer Studionet with `genlayer-js`, submits `curate_and_mint`, follows the transaction through finalization and execution verification, reads review and registry state, renders the gallery, and supports owner-authorized transfers.
 
-The Python Intelligent Contract renders the submitted image, evaluates prompt alignment, quality, originality, and safety with a structured jury task, and stores an `APPROVED`, `REVISE`, or `REJECTED` record. Validators independently repeat the evidence render and jury evaluation. They must agree on the verdict and threshold conclusions, while bounded score tolerance handles nondeterministic variation. Approved submissions receive a native registry token ID.
+The Python Intelligent Contract fetches the submitted image bytes, binds the review to their Keccak-256 digest, evaluates prompt alignment, quality, originality, and safety with a structured jury task, and stores an `APPROVED`, `REVISE`, or `REJECTED` record. Validators independently repeat the byte fetch, hash check, and jury evaluation. They must agree on the exact content identity, verdict, and threshold conclusions, while bounded score tolerance handles nondeterministic variation. Approved submissions receive a native registry token ID.
 
-The source is covered by 17 Python contract tests and 7 frontend transaction-state tests. GenVM lint/validation and the Vite production build are part of the verification workflow.
+The source is covered by 44 Python contract tests and 7 frontend transaction-state tests. GenVM lint/validation and the Vite production build are part of the verification workflow.
 
 The existing Studionet contract at `0x2676763dBD21891C5D4945d0e20D2108802C0997` and the current Vercel app predate the independent validator re-evaluation change. V1 is not submission-ready until the revised contract is deployed, its transaction is verified as `FINALIZED` and `SUCCESS`, and the frontend and documentation are updated to that new address.
 
@@ -22,7 +22,7 @@ Initial discovery can come from a public GenLayer submission, repository documen
 
 ## Planned Integrations
 
-- **Content-addressed media storage:** IPFS or Arweave could reduce dependence on a mutable public URL and improve long-term evidence availability. This requires a verified upload pipeline, gateway reliability checks, and contract-compatible rendering.
+- **Durable media mirroring:** IPFS or Arweave could improve long-term availability of bytes already identified by the on-chain Keccak-256 digest. This requires a verified upload pipeline, gateway reliability checks, and contract-compatible retrieval.
 - **Wallet and Explorer deep links:** richer wallet support and transaction-specific Explorer links would make review and transfer verification easier. This requires confirmed Studionet wallet capabilities and stable Explorer URL formats.
 - **Exportable NFT standards:** a future EVM-compatible mint or bridge could make approved registry records usable outside this contract. This requires a clear token standard, metadata integrity design, bridge security review, and explicit separation from the native V1 registry.
 - **Model/provider diversity:** future jury strategies could compare supported models or evidence-grounded prompts to reduce correlated model failures. This requires current GenLayer-supported APIs, cost and latency testing, and equivalence rules that preserve deterministic settlement thresholds.
@@ -58,9 +58,9 @@ Targets requiring numeric thresholds should be set only after a measured pilot b
 
 ### Phase 2 — Durable Evidence
 
-- **Problem:** a public Blob URL does not prove permanent availability or content identity.
-- **User value:** a review remains tied to durable, verifiable media.
-- **Planned work:** evaluate content hashes and IPFS or Arweave mirroring, then expose evidence identifiers in review metadata.
+- **Problem:** the current digest proves content identity but a public Blob URL does not guarantee permanent availability.
+- **User value:** the exact adjudicated media remains retrievable through more than one storage path.
+- **Planned work:** evaluate IPFS or Arweave mirroring for content already identified by the stored digest.
 - **Dependencies:** renderable gateway strategy, storage-cost evaluation, contract migration plan, and new tests.
 - **Success signal:** stored evidence identifiers resolve reliably and detect changed content.
 - **Priority:** second, because evidence integrity strengthens the existing trust model.

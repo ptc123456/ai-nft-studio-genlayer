@@ -1,0 +1,6 @@
+networks:
+  default: "localnet"
+  localnet:
+    url: "http://localhost:4000/api"
+  studionet:
+    url: "https://studio.genlayer.com/api"
