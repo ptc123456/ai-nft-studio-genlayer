@@ -50,7 +50,7 @@ The reviewed contract revision is deployed on Studionet. Its deployed source is 
 | Approved mint | [`0xb5d7be40...a929c9`](https://explorer-studio.genlayer.com/tx/0xb5d7be409d20c4bc37bca201270f2b8a7b0c039870b299c6890677be45a929c9) | `FINALIZED`, `SUCCESS`, image-grounded `APPROVED`; token `1` minted and read back |
 | Semantic revision | [`0xcc9abd4e...f9a165`](https://explorer-studio.genlayer.com/tx/0xcc9abd4ec832f1b54f10be40d66719b8e67de539c288f64055f3a85eeff9a165) | `FINALIZED`, `SUCCESS`, image-grounded `REVISE`; alignment `2`, no mint |
 | Semantic rejection | [`0xc1cec9a7...3ac3c2`](https://explorer-studio.genlayer.com/tx/0xc1cec9a74977cdc045f35e42073ebb247fb7ae3dd01033da599ac35ec83ac3c2) | `FINALIZED`, `SUCCESS`, image-grounded `REJECTED`; safety `9`, no mint |
-| Ownership transfer | [`0x75b2f544...c0361b`](https://explorer-studio.genlayer.com/tx/0x75b2f5444afc2cacb98ad69c8e8bfbf28d8ea8608c488873e1bfcba406c0361b) | `FINALIZED`, `SUCCESS`, all four validator votes agreed; token `1` owner updated |
+| Ownership transfer | [`0x75b2f544...c0361b`](https://explorer-studio.genlayer.com/tx/0x75b2f5444afc2cacb98ad69c8e8bfbf28d8ea8608c488873e1bfcba406c0361b) | `FINALIZED`, `SUCCESS`, five `AGREE` entries in the round vote array; token `1` owner updated |
 | Vercel app | [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/) | Public redeployment of this revision is still pending |
 
 See [`DEPLOYMENT.md`](DEPLOYMENT.md) for source parity, the complete live proof matrix, diagnostic failures, accepted-state readbacks, and reviewer-feedback closure.
