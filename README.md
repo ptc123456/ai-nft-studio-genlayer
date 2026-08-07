@@ -47,10 +47,13 @@ The reviewed contract revision is deployed on Studionet. Its deployed source is 
 | --- | --- | --- |
 | Studionet contract | [`0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`](https://explorer-studio.genlayer.com/address/0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F) | Deployment `FINALIZED`, execution `SUCCESS`, source SHA-256 parity confirmed |
 | Deployment transaction | [`0x26f3040e...382c51`](https://explorer-studio.genlayer.com/tx/0x26f3040e201df07c36bbe68f026dc09663d5fd632036ebecd44c1aecde382c51) | Five validator votes agreed |
-| Live write evidence | [`0xe95b9f72...8fc6a9`](https://explorer-studio.genlayer.com/tx/0xe95b9f72e473c06c1797af123e52e9179463752f48682f98cd1a62763f8fc6a9) | `FINALIZED`, `SUCCESS`, `REVISE`; stored submission and immutable image hash read back |
+| Approved mint | [`0xb5d7be40...a929c9`](https://explorer-studio.genlayer.com/tx/0xb5d7be409d20c4bc37bca201270f2b8a7b0c039870b299c6890677be45a929c9) | `FINALIZED`, `SUCCESS`, image-grounded `APPROVED`; token `1` minted and read back |
+| Semantic revision | [`0xcc9abd4e...f9a165`](https://explorer-studio.genlayer.com/tx/0xcc9abd4ec832f1b54f10be40d66719b8e67de539c288f64055f3a85eeff9a165) | `FINALIZED`, `SUCCESS`, image-grounded `REVISE`; alignment `2`, no mint |
+| Semantic rejection | [`0xc1cec9a7...3ac3c2`](https://explorer-studio.genlayer.com/tx/0xc1cec9a74977cdc045f35e42073ebb247fb7ae3dd01033da599ac35ec83ac3c2) | `FINALIZED`, `SUCCESS`, image-grounded `REJECTED`; safety `9`, no mint |
+| Ownership transfer | [`0x75b2f544...c0361b`](https://explorer-studio.genlayer.com/tx/0x75b2f5444afc2cacb98ad69c8e8bfbf28d8ea8608c488873e1bfcba406c0361b) | `FINALIZED`, `SUCCESS`, all four validator votes agreed; token `1` owner updated |
 | Vercel app | [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/) | Public redeployment of this revision is still pending |
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for hashes, initial state, the rollback test, and current live-state evidence.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for source parity, the complete live proof matrix, diagnostic failures, accepted-state readbacks, and reviewer-feedback closure.
 
 ## Setup
 
@@ -89,4 +92,4 @@ The frontend submits the write, polls the transaction, waits for `FINALIZED`, an
 - Curator, Skeptic, and Ethicist are structured perspectives in one jury prompt, not separate providers or separate validators.
 - Validator results can vary. Consensus compares verdicts and threshold conclusions exactly and aggregate scores within a bounded tolerance.
 - Registry tokens are native records in this contract, not ERC-721 tokens and not bridged assets.
-- Studionet model routing can still produce conservative or divergent visual assessments. The verified live write reached consensus with three agree and two disagree votes and stored `REVISE`; it is evidence of the curation path, not evidence that every validator interpreted the image identically.
+- Studionet model routing can still produce conservative or divergent visual assessments. One documented rejection attempt became `UNDETERMINED` after validator score disagreement and did not change state; the accepted retry used simpler visual evidence and reached consensus. The live proof demonstrates all three verdict branches, not identical intermediate scores across validators.

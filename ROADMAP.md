@@ -10,7 +10,7 @@ The Python Intelligent Contract fetches the submitted image bytes, binds the rev
 
 The source is covered by 44 Python contract tests and 8 frontend tests. GenVM lint/validation and the Vite production build are part of the verification workflow.
 
-The reviewed contract is deployed on Studionet at `0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`. Deployment source parity, `FINALIZED` status, `SUCCESS` execution, initial state, and a successful live `REVISE` write with state readback are recorded in `DEPLOYMENT.md`. The public Vercel app still requires redeployment before submission evidence is complete.
+The reviewed contract is deployed on Studionet at `0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`. `DEPLOYMENT.md` records deployment source parity and live `FINALIZED` + `SUCCESS` evidence for image-grounded `APPROVED`, `REVISE`, and `REJECTED` outcomes plus ownership transfer. Current readback contains four submissions, one minted registry token, and the transferred owner. The public Vercel app still requires redeployment before submission evidence is complete.
 
 ## Target Users
 
@@ -35,10 +35,10 @@ No production usage metrics are claimed. After the corrected deployment, the pro
 
 | Metric | Current evidence | Initial target | Measurement |
 | --- | --- | --- | --- |
-| Core-flow completion | One live curation reached `FINALIZED` + `SUCCESS` and stored `REVISE` | Establish a baseline from real trials | Submitted sessions reaching verified `FINALIZED` + `SUCCESS` |
-| Contract execution reliability | One JPEG write rolled back; one PNG write succeeded | Track and reduce failed/undetermined writes | Successful executions divided by submitted writes |
-| Curation volume | One stored `REVISE`; zero minted tokens | Record initial approved/revise/rejected distribution | `get_total_submissions` and stored verdicts |
-| Validator agreement | Live PNG write: three agree, two disagree, accepted | Monitor consensus retries and failures | Transaction receipts and contract/validator logs |
+| Core-flow completion | Image-grounded `APPROVED`, `REVISE`, and `REJECTED` writes plus transfer reached `FINALIZED` + `SUCCESS` | Establish a baseline from real product sessions | Submitted sessions reaching verified `FINALIZED` + `SUCCESS` and matching readback |
+| Contract execution reliability | Accepted state has four submissions and one mint; documented diagnostics include image-format rollback, host-rate-limit rollback, and one undetermined jury attempt | Track and reduce failed/undetermined writes | Successful executions divided by submitted writes, classified by failure reason |
+| Curation volume | Four stored reviews: one approved mint, two revisions, and one rejection | Record the approved/revise/rejected distribution as real usage grows | `get_total_submissions`, `get_total_minted`, and stored verdicts |
+| Validator agreement | All advertised terminal verdicts have accepted consensus evidence; one complex rejection image produced an undetermined transaction before a simpler image reached consensus | Monitor consensus retries and evidence complexity | Transaction receipts, validator votes, and unchanged-state checks after failures |
 | Processing time | Not measured | Establish median and tail latency | Time from transaction hash to verified finalization |
 | Contributor activity | No claim | Track external issues and reviewed contributions | Public repository activity |
 | Active integrations | FLUX generation, Vercel Blob, GenLayer Studionet client | Validate each dependency in production | Synthetic checks and successful end-to-end sessions |
