@@ -1,10 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { put } from '@vercel/blob';
+import sharp from 'sharp';
 
 const MODEL = 'pollinations-flux';
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 15;
 const rateLimits = new Map();
+
+export async function normalizeArtwork(imageBuffer) {
+  return sharp(imageBuffer)
+    .rotate()
+    .removeAlpha()
+    .png()
+    .toBuffer();
+}
 
 function sendJson(res, status, payload) {
   res.statusCode = status;
@@ -120,22 +129,23 @@ export default async function handler(req, res) {
     }
 
     const arrayBuffer = await imgResponse.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
+    const sourceBuffer = Buffer.from(arrayBuffer);
 
+    if (sourceBuffer.length === 0 || sourceBuffer.length > 10 * 1024 * 1024) {
+      throw new Error('INVALID_IMAGE_SIZE');
+    }
+
+    // Studionet vision providers consistently accept normalized PNG evidence,
+    // while some generated JPEG metadata is rejected as INVALID_IMAGE.
+    const imageBuffer = await normalizeArtwork(sourceBuffer);
     if (imageBuffer.length === 0 || imageBuffer.length > 10 * 1024 * 1024) {
       throw new Error('INVALID_IMAGE_SIZE');
     }
 
-    const extension =
-      mimeType === 'image/png'
-        ? 'png'
-        : mimeType === 'image/webp'
-          ? 'webp'
-          : 'jpg';
-    const blob = await put(`ai-nft-studio/${randomUUID()}.${extension}`, imageBuffer, {
+    const blob = await put(`ai-nft-studio/${randomUUID()}.png`, imageBuffer, {
       access: 'public',
       addRandomSuffix: true,
-      contentType: mimeType,
+      contentType: 'image/png',
       cacheControlMaxAge: 31536000
     });
     const publicUrl = blob.url;
@@ -150,7 +160,7 @@ export default async function handler(req, res) {
 
     return sendJson(res, 200, {
       url: publicUrl,
-      contentType: mimeType,
+      contentType: 'image/png',
       model: MODEL
     });
   } catch (error) {

@@ -9,9 +9,8 @@ const FINALIZED_STATUS = 'FINALIZED';
 
 // Configuration
 const studioChainId = '0xf22f'; // Chain ID 61999 in hex
-// Existing legacy deployment; update this fallback only after the revised
-// contract deployment is verified as FINALIZED with SUCCESS.
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x2676763dBD21891C5D4945d0e20D2108802C0997';
+// Reviewed Studionet deployment; VITE_CONTRACT_ADDRESS may override it per environment.
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F';
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL || 'https://github.com/ptc123456/ai-nft-studio-genlayer';
 const EXPLORER_URL = 'https://explorer-studio.genlayer.com/';
 

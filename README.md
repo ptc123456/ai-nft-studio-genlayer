@@ -11,7 +11,7 @@ The image generator and Vercel Blob host remain centralized services. They produ
 ## How it works
 
 1. The user enters a 2–80 character title and a 20–800 character visual prompt.
-2. `api/generate-image.js` requests a FLUX image from Pollinations and uploads the returned image to a public Vercel Blob URL.
+2. `api/generate-image.js` requests a FLUX image from Pollinations, normalizes it to PNG for Studionet vision-provider compatibility, and uploads it to a public Vercel Blob URL.
 3. The browser calls `curate_and_mint(title, prompt, artwork_url)` with `genlayer-js`.
 4. The consensus leader fetches the exact image bytes with `gl.nondet.web.get`, computes their Keccak-256 digest, and passes those same bytes to `gl.nondet.exec_prompt(..., images=[image_bytes])`.
 5. One jury task produces three structured perspectives: Curator, Skeptic, and Ethicist. Their scores are aggregated into alignment, quality, originality, and safety.
@@ -41,14 +41,16 @@ Contract methods:
 
 ## Deployment status
 
-The repository now contains a release-candidate contract with independent validator re-evaluation. That contract revision is **not deployed yet**. The existing public deployment and live app predate this correction and must not be presented as evidence for the revised consensus behavior.
+The reviewed contract revision is deployed on Studionet. Its deployed source is byte-identical to `contracts/registry.py` at commit `90ceadbc64f8e844b6956b9e131fd07bb9ae54da`.
 
-| Existing public component | Location | Status |
+| Component | Location | Verified status |
 | --- | --- | --- |
-| Legacy Studionet contract | [`0x2676763dBD21891C5D4945d0e20D2108802C0997`](https://explorer-studio.genlayer.com/address/0x2676763dBD21891C5D4945d0e20D2108802C0997) | Deployed before independent validator re-evaluation was added |
-| Existing Vercel app | [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/) | Currently configured for the legacy contract |
+| Studionet contract | [`0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`](https://explorer-studio.genlayer.com/address/0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F) | Deployment `FINALIZED`, execution `SUCCESS`, source SHA-256 parity confirmed |
+| Deployment transaction | [`0x26f3040e...382c51`](https://explorer-studio.genlayer.com/tx/0x26f3040e201df07c36bbe68f026dc09663d5fd632036ebecd44c1aecde382c51) | Five validator votes agreed |
+| Live write evidence | [`0xe95b9f72...8fc6a9`](https://explorer-studio.genlayer.com/tx/0xe95b9f72e473c06c1797af123e52e9179463752f48682f98cd1a62763f8fc6a9) | `FINALIZED`, `SUCCESS`, `REVISE`; stored submission and immutable image hash read back |
+| Vercel app | [ai-nft-studio-genlayer.vercel.app](https://ai-nft-studio-genlayer.vercel.app/) | Public redeployment of this revision is still pending |
 
-Before submission, deploy `contracts/registry.py` as a new Studionet instance, verify the deployment transaction is `FINALIZED` with `SUCCESS`, replace `VITE_CONTRACT_ADDRESS` with that real address, deploy the frontend, and update this table. Do not use a placeholder contract address.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for hashes, initial state, the rollback test, and current live-state evidence.
 
 ## Setup
 
@@ -72,7 +74,7 @@ npm run test:frontend
 npm run build
 ```
 
-The Python suite covers approval, revision, rejection, malformed evidence/results, URL and content replay, immutable hash binding, hostile creator input, ownership transfer, validator disagreement, all `54/55/56`, `69/70/71`, and tolerance `19/20/21` boundaries. It proves that schema-valid leader output is rejected when the independently fetched bytes, verdict, or consequential threshold band differs. Frontend tests cover status normalization, `FINALIZED` detection, and execution-result verification. Exact test counts are recorded from the release-candidate verification run rather than hard-coded here.
+The Python suite covers approval, revision, rejection, malformed evidence/results, URL and content replay, immutable hash binding, hostile creator input, ownership transfer, validator disagreement, all `54/55/56`, `69/70/71`, and tolerance `19/20/21` boundaries. It proves that schema-valid leader output is rejected when the independently fetched bytes, verdict, or consequential threshold band differs. Frontend tests cover generated-image PNG normalization, status normalization, `FINALIZED` detection, and execution-result verification. Exact test counts are recorded from the release verification run rather than hard-coded here.
 
 ## Transaction lifecycle
 
@@ -87,4 +89,4 @@ The frontend submits the write, polls the transaction, waits for `FINALIZED`, an
 - Curator, Skeptic, and Ethicist are structured perspectives in one jury prompt, not separate providers or separate validators.
 - Validator results can vary. Consensus compares verdicts and threshold conclusions exactly and aggregate scores within a bounded tolerance.
 - Registry tokens are native records in this contract, not ERC-721 tokens and not bridged assets.
-- The release-candidate contract requires a new deployment; the existing Explorer address does not prove the corrected validator behavior.
+- Studionet model routing can still produce conservative or divergent visual assessments. The verified live write reached consensus with three agree and two disagree votes and stored `REVISE`; it is evidence of the curation path, not evidence that every validator interpreted the image identically.
