@@ -9,7 +9,7 @@ AI NFT Studio is a GenLayer artwork-curation dApp. A creator enters a title and 
 - Deployment transaction: [`0x26f3040e...382c51`](https://explorer-studio.genlayer.com/tx/0x26f3040e201df07c36bbe68f026dc09663d5fd632036ebecd44c1aecde382c51)
 - Detailed verification: [`DEPLOYMENT.md`](DEPLOYMENT.md)
 
-The contract links and evidence are verified for this revision. The live-app URL is public; frontend parity with the final pushed revision is checked separately at the final release checkpoint.
+The contract links, repository configuration, and production bundle are verified together in [`DEPLOYMENT.md`](DEPLOYMENT.md). The live bundle targets the reviewed Studionet contract and contains no legacy contract address.
 
 ## Trust problem
 

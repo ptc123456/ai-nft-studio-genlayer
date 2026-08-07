@@ -10,7 +10,7 @@ The Python Intelligent Contract fetches the submitted image bytes, binds the rev
 
 The source is covered by 44 Python contract tests and 8 frontend tests. GenVM lint/validation and the Vite production build are part of the verification workflow.
 
-The reviewed contract is deployed on Studionet at `0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`. `DEPLOYMENT.md` records deployment source parity and live `FINALIZED` + `SUCCESS` evidence for image-grounded `APPROVED`, `REVISE`, and `REJECTED` outcomes plus ownership transfer. Current readback contains four submissions, one minted registry token, and the transferred owner. The public Vercel app still requires redeployment before submission evidence is complete.
+The reviewed contract is deployed on Studionet at `0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`. `DEPLOYMENT.md` records deployment source parity and live `FINALIZED` + `SUCCESS` evidence for image-grounded `APPROVED`, `REVISE`, and `REJECTED` outcomes plus ownership transfer. Current readback contains four submissions, one minted registry token, and the transferred owner. The public Vercel app is deployed with the reviewed contract address, and its production JavaScript asset matches the local production build byte for byte.
 
 ## Target Users
 
@@ -36,25 +36,25 @@ No production usage metrics are claimed. After the corrected deployment, the pro
 | Metric | Current evidence | Initial target | Measurement |
 | --- | --- | --- | --- |
 | Core-flow completion | Image-grounded `APPROVED`, `REVISE`, and `REJECTED` writes plus transfer reached `FINALIZED` + `SUCCESS` | Establish a baseline from real product sessions | Submitted sessions reaching verified `FINALIZED` + `SUCCESS` and matching readback |
-| Contract execution reliability | Accepted state has four submissions and one mint; documented diagnostics include image-format rollback, host-rate-limit rollback, and one undetermined jury attempt | Track and reduce failed/undetermined writes | Successful executions divided by submitted writes, classified by failure reason |
+| Contract execution reliability | Accepted state has four submissions and one mint; documented diagnostics include image-format rollback, host-rate-limit rollback, and one finalized `MAJORITY_DISAGREE` outcome | Track and reduce failed or non-accepted writes | Successful executions divided by submitted writes, classified by failure reason |
 | Curation volume | Four stored reviews: one approved mint, two revisions, and one rejection | Record the approved/revise/rejected distribution as real usage grows | `get_total_submissions`, `get_total_minted`, and stored verdicts |
-| Validator agreement | All advertised terminal verdicts have accepted consensus evidence; one complex rejection image produced an undetermined transaction before a simpler image reached consensus | Monitor consensus retries and evidence complexity | Transaction receipts, validator votes, and unchanged-state checks after failures |
+| Validator agreement | All advertised terminal verdicts have accepted consensus evidence; one complex rejection image produced a finalized `MAJORITY_DISAGREE` transaction before a simpler image reached consensus | Monitor consensus retries and evidence complexity | Transaction receipts, validator votes, and unchanged-state checks after failures |
 | Processing time | Not measured | Establish median and tail latency | Time from transaction hash to verified finalization |
 | Contributor activity | No claim | Track external issues and reviewed contributions | Public repository activity |
-| Active integrations | FLUX generation, Vercel Blob, GenLayer Studionet client | Validate each dependency in production | Synthetic checks and successful end-to-end sessions |
+| Active integrations | FLUX generation, Vercel Blob, GenLayer Studionet client, and the production frontend are configured in the live release | Monitor each dependency in production | Synthetic checks and successful end-to-end sessions |
 
 Targets requiring numeric thresholds should be set only after a measured pilot baseline.
 
 ## Future Updates
 
-### Phase 1 - Live Release and Operational Reliability
+### Phase 1 - Operational Reliability
 
-- **Problem:** the reviewed contract is deployed, but the public frontend has not yet been redeployed against it and live vision-model behavior varies.
-- **User value:** reviewers and creators can verify that the live app uses the same contract version documented in the repository and handles incompatible generated image formats safely.
-- **Planned work:** redeploy the PNG-normalizing frontend, verify the production bundle address, capture a real product screenshot, and measure generation/consensus failures.
-- **Dependencies:** Vercel configuration, linked Blob storage, and post-deployment parity checks.
-- **Success signal:** source, README, Explorer, and live app all reference the same contract and a generated PNG reaches a verified on-chain verdict.
-- **Priority:** highest, because it closes the current submission-evidence gap.
+- **Problem:** image generation, public evidence hosting, and nondeterministic consensus can fail for different operational reasons that users need to distinguish.
+- **User value:** creators receive clearer recovery guidance without mistaking a failed execution or disagreement for a successful mint.
+- **Planned work:** classify production failures, add bounded retry guidance, and measure generation, hosting, finalization, and consensus latency separately.
+- **Dependencies:** production observability, privacy-safe event definitions, and enough real sessions to establish a baseline.
+- **Success signal:** measured completion and failure rates with each unsuccessful request assigned to a reproducible category.
+- **Priority:** highest, because the live release should establish reliability before adding new storage or token integrations.
 
 ### Phase 2 - Durable Evidence
 

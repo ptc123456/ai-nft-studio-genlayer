@@ -37,7 +37,21 @@ Current accepted-state readback:
 
 Diagnostic transactions are not counted as successful paths. JPEG transaction [`0x84caa625...dcd0b86`](https://explorer-studio.genlayer.com/tx/0x84caa6253303a881a8039fbadddce49c8b8474146c2e22008d9e68ac1dcd0b86) finalized with an execution rollback after `INVALID_IMAGE`; [`0xb2c33983...2d3a27`](https://explorer-studio.genlayer.com/tx/0xb2c339832e49ad2d1e463ddc54ef361c1b6a3d83343546a8da750c5aa72d3a27) finalized with an execution rollback after an evidence host returned HTTP `429`; and [`0x380c08d6...865e42`](https://explorer-studio.genlayer.com/tx/0x380c08d62871fb08ff3abb5633ba602f9b2a7a6fb014c5483d7735f002865e42) finalized with result `MAJORITY_DISAGREE` after validator score divergence. All three left accepted state unchanged.
 
-The checked-in image endpoint normalizes generated media to PNG before public Blob storage. This frontend/server revision is not represented by the frozen contract source and does not alter its address or storage. The public Vercel app has not yet been redeployed to this repository revision.
+The checked-in image endpoint normalizes generated media to PNG before public Blob storage. This frontend/server behavior is separate from the frozen contract source and does not alter its address or storage.
+
+## Production frontend parity
+
+- Live app: [https://ai-nft-studio-genlayer.vercel.app/](https://ai-nft-studio-genlayer.vercel.app/)
+- Production status: `READY`
+- Production app asset: `assets/app-BiRmXJ7f.js`
+- Local and live app asset SHA-256: `932a22600e61ffb30c51d44f04fbc32e4296f138f877da7f57c14d793d8994ae`
+- Configured contract: `0x498b0e2BA30B7b51C708a1304f15C54bdEC9Af3F`
+- Legacy contract address present in bundle: no
+- Network configuration: Studionet, chain ID `61999` (`0xf22f`)
+- Transaction checks present in bundle: `FINALIZED` and execution `SUCCESS`
+- Image API route: deployed; unsupported `GET` returns `405` and an empty JSON `POST` returns `400`
+
+The production JavaScript asset was downloaded from the stable live domain and compared byte for byte with the local production build. Their SHA-256 hashes matched exactly.
 
 ## Reviewer feedback closure
 
